@@ -251,15 +251,15 @@ The demo includes 5 challenging scenarios:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🏆 Team Nova
+## 🆘 Support
 
-**GenAI Hackathon 2025**
-
-- **Problem**: Ethical content moderation at scale
-- **Solution**: Multi-agent ethical deliberation
-- **Innovation**: AI reasoning like ethicists, not rule enforcers
-- **Impact**: Transparent, nuanced, culturally-aware moderation
+For support and questions:
+- Create an issue in the repository
+- Contact the development team
+- Check the FAQ section
 
 ---
 
-**AutoEthos** - Where AI learns to think ethically, not just efficiently.
+**Last Updated**: January 2025  
+**Version**: 1.0.0  
+**Team**: Nova
