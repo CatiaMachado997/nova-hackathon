@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AutoEthos Startup Script
+EthIQ Startup Script
 Easy way to start different components of the system
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 def print_banner():
     """Print startup banner"""
     print("=" * 80)
-    print("🤖 AutoEthos - Ethical Intelligence Platform")
+    print("🤖 EthIQ - Ethical Intelligence Platform")
     print("=" * 80)
     print("GenAI Hackathon 2025 - Team Nova")
     print()
@@ -57,7 +57,7 @@ def run_test():
 
 def run_demo():
     """Run the demo"""
-    print("🎮 Running AutoEthos demo...")
+    print("🎮 Running EthIQ demo...")
     try:
         subprocess.run([sys.executable, "demo.py"])
     except KeyboardInterrupt:
@@ -150,7 +150,7 @@ def main():
                 
             elif choice == "5":
                 print()
-                print("🚀 Starting AutoEthos system...")
+                print("🚀 Starting EthIQ system...")
                 print("   API: http://localhost:8000")
                 print("   Dashboard: http://localhost:8080")
                 print("   Press Ctrl+C to stop both")
@@ -177,7 +177,7 @@ def main():
                     try:
                         api_process.wait()
                     except KeyboardInterrupt:
-                        print("\n🛑 Stopping AutoEthos system...")
+                        print("\n🛑 Stopping EthIQ system...")
                         api_process.terminate()
                         dashboard_process.terminate()
                         print("✅ System stopped")

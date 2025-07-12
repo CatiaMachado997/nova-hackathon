@@ -1,0 +1,7 @@
+Content: "We should provide fair compensation and proper training to all employees, regardless of their position. Everyone deserves to be treated with dignity and respect."
+
+Analysis: This content demonstrates respect for persons as ends in themselves, which is central to deontological ethics. Treating all employees fairly regardless of their role upholds the principle that all human beings have intrinsic worth and deserve equal moral consideration.
+
+Decision: APPROVED - Respecting human dignity and autonomy
+Confidence: 0.92
+Reasoning: Providing fair compensation and training treats employees as autonomous beings with intrinsic worth, fulfilling the duty to respect all persons as ends in themselves. 

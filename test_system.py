@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AutoEthos System Test
+EthIQ System Test
 Simple test to verify system components work correctly
 """
 
@@ -11,7 +11,7 @@ from agents import EthicsCommander, AuditLogger
 
 async def test_basic_functionality():
     """Test basic system functionality"""
-    print("🧪 Testing AutoEthos System Components")
+    print("🧪 Testing EthIQ System Components")
     print("=" * 50)
     
     try:
@@ -118,7 +118,7 @@ async def test_agent_responses():
 
 async def main():
     """Main test function"""
-    print("🚀 AutoEthos System Test Suite")
+    print("🚀 EthIQ System Test Suite")
     print("=" * 60)
     
     # Run basic functionality test
@@ -129,7 +129,7 @@ async def main():
         agent_test_passed = await test_agent_responses()
         
         if agent_test_passed:
-            print("\n🎉 All tests passed! AutoEthos is ready to use.")
+            print("\n🎉 All tests passed! EthIQ is ready to use.")
             print("\nNext steps:")
             print("1. Run 'python demo.py' for full demo")
             print("2. Start API: 'cd api && uvicorn main:app --reload'")

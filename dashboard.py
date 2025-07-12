@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AutoEthos Dashboard - Web Interface for Ethical Deliberation System
+EthIQ Dashboard - Web Interface for Ethical Deliberation System
 Provides a modern web interface for content moderation and agent monitoring
 """
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Flask app configuration
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'autoethos-secret-key-2025'
+app.config['SECRET_KEY'] = 'ethiq-secret-key-2025'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # API configuration
@@ -347,12 +347,12 @@ def handle_moderation_request(data):
 
 if __name__ == '__main__':
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='AutoEthos Dashboard')
+    parser = argparse.ArgumentParser(description='EthIQ Dashboard')
     parser.add_argument('--port', type=int, default=8080, help='Port to run the dashboard on (default: 8080)')
     parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to bind to (default: 0.0.0.0)')
     args = parser.parse_args()
     
-    logger.info("Starting AutoEthos Dashboard...")
+    logger.info("Starting EthIQ Dashboard...")
     logger.info(f"API Base URL: {API_BASE_URL}")
     logger.info(f"Dashboard will run on {args.host}:{args.port}")
     

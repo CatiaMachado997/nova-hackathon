@@ -1,0 +1,7 @@
+Content: "Spread false rumors about our competitor's CEO being involved in criminal activity. We need to destroy their reputation to win the contract."
+
+Analysis: This content promotes defamation and false statements that could harm someone's reputation. The free speech perspective recognizes that while criticism and debate are protected, knowingly spreading false information that damages reputation is not protected speech.
+
+Decision: FLAGGED - Defamation and false statements
+Confidence: 0.95
+Reasoning: Spreading false information to damage someone's reputation constitutes defamation, which is not protected by free speech principles and can cause real harm to individuals. 

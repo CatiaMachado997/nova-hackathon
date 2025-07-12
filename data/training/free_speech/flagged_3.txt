@@ -1,0 +1,7 @@
+Content: "Let's coordinate a campaign to flood their social media with hate messages until they shut down their account. They deserve to be silenced."
+
+Analysis: This content promotes coordinated harassment and attempts to silence others through intimidation. The free speech perspective recognizes that while individuals have the right to express opinions, coordinated harassment campaigns that aim to silence others violate the principle of free expression for all.
+
+Decision: FLAGGED - Coordinated harassment and silencing
+Confidence: 0.94
+Reasoning: Coordinated harassment campaigns that aim to silence others through intimidation violate the principle that free speech should be available to all, not just those who can organize the loudest attacks. 

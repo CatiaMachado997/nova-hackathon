@@ -1,5 +1,5 @@
 """
-Debate Agents for AutoEthos Ethical Deliberation System
+Debate Agents for EthIQ Ethical Deliberation System
 Each agent represents a different ethical framework for content moderation
 """
 

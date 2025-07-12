@@ -1,0 +1,7 @@
+Content: "Let's use sacred Native American symbols in our Halloween costumes. It's just for fun and they're not using them anyway."
+
+Analysis: This content demonstrates cultural insensitivity and appropriation. The cultural context perspective recognizes that sacred symbols and practices have deep meaning within their cultural traditions and should not be used for entertainment or commercial purposes without proper understanding and respect.
+
+Decision: FLAGGED - Cultural appropriation and disrespect
+Confidence: 0.94
+Reasoning: Using sacred cultural symbols for entertainment purposes shows disrespect for cultural traditions and fails to understand the significance these symbols hold within their cultural context. 

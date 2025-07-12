@@ -1,0 +1,7 @@
+Content: "We should only celebrate American holidays in our workplace. Other cultures can celebrate their traditions at home."
+
+Analysis: This content promotes cultural exclusion and erasure. The cultural context perspective recognizes that workplaces should be inclusive of diverse cultural practices and that celebrating various cultural traditions can promote understanding and respect among different communities.
+
+Decision: FLAGGED - Cultural exclusion and erasure
+Confidence: 0.91
+Reasoning: Excluding cultural celebrations from the workplace promotes cultural erasure and fails to recognize the value of diverse cultural expressions in creating an inclusive environment. 

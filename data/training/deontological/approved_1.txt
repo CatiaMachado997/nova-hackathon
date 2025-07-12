@@ -1,0 +1,7 @@
+Content: "We must tell the truth about the product recall, even though it will hurt our sales. Honesty is our responsibility to our customers."
+
+Analysis: This content upholds the duty to tell the truth, which is a fundamental moral obligation in deontological ethics. Even when truth-telling has negative consequences, the moral duty to be honest takes precedence over potential financial losses.
+
+Decision: APPROVED - Upholding truth-telling duty
+Confidence: 0.95
+Reasoning: Telling the truth about product safety issues fulfills the fundamental duty to be honest and respects customers as autonomous beings who deserve accurate information. 

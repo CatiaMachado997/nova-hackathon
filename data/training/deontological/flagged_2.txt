@@ -1,0 +1,7 @@
+Content: "Use the interns as free labor without proper training or compensation. They're just here to learn, so we don't need to pay them fairly."
+
+Analysis: This content treats people as mere means to an end rather than as ends in themselves. The deontological perspective requires respecting human dignity and treating people as autonomous beings with intrinsic worth, not as tools for achieving goals.
+
+Decision: FLAGGED - Treating people as means rather than ends
+Confidence: 0.94
+Reasoning: Using people as unpaid labor without proper compensation violates the duty to treat all persons as ends in themselves, not merely as means to achieve business objectives. 

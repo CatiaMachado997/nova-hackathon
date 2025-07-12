@@ -1,5 +1,5 @@
 """
-GenAI AgentOS Protocol Integration for AutoEthos
+GenAI AgentOS Protocol Integration for EthIQ
 Enables agent orchestration, messaging, and lifecycle management through the protocol
 """
 

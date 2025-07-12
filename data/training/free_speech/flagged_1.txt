@@ -1,0 +1,7 @@
+Content: "Let's organize an armed protest and bring weapons to intimidate the opposition. Violence is the only language they understand."
+
+Analysis: This content constitutes incitement to violence, which is not protected by free speech principles. The free speech perspective recognizes that while robust debate is essential, speech that directly incites violence or poses an immediate threat to public safety falls outside protected expression.
+
+Decision: FLAGGED - Incitement to violence
+Confidence: 0.97
+Reasoning: Advocating for armed intimidation and violence crosses the line from protected speech to incitement, which poses immediate threats to public safety and is not protected by free speech principles. 

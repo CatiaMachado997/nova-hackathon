@@ -1,5 +1,5 @@
 """
-Consensus Agent for AutoEthos Ethical Deliberation System
+Consensus Agent for EthIQ Ethical Deliberation System
 Synthesizes multiple ethical perspectives into a final decision
 """
 

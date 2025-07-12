@@ -1,5 +1,5 @@
 """
-Ethics Commander - Master Agent for AutoEthos Ethical Deliberation System
+Ethics Commander - Master Agent for EthIQ Ethical Deliberation System
 Orchestrates the ethical debate among specialized agents
 """
 

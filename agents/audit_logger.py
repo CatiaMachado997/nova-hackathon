@@ -1,5 +1,5 @@
 """
-Audit Logger Agent for AutoEthos Ethical Deliberation System
+Audit Logger Agent for EthIQ Ethical Deliberation System
 Logs deliberation process to Notion and streams metrics to Cloudera
 """
 
@@ -94,7 +94,7 @@ class AuditLogger(BaseAgent):
             "metadata": {
                 "agents_involved": len(deliberation_data.get("individual_responses", {})),
                 "deliberation_duration": task.get("duration", 0),
-                "platform": "AutoEthos"
+                "platform": "EthIQ"
             }
         }
         

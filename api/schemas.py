@@ -1,5 +1,5 @@
 """
-API Schemas for AutoEthos Ethical Deliberation System
+API Schemas for EthIQ Ethical Deliberation System
 Pydantic models for request/response validation
 """
 

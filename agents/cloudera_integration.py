@@ -1,5 +1,5 @@
 """
-Cloudera Integration for AutoEthos
+Cloudera Integration for EthIQ
 Enables real-time data streaming and analytics through Cloudera platform
 """
 
@@ -41,7 +41,7 @@ class ClouderaStreamingClient:
             # Add metadata
             enriched_data = {
                 "timestamp": datetime.now().isoformat(),
-                "source": "AutoEthos",
+                "source": "EthIQ",
                 "version": "1.0.0",
                 "data": data
             }
@@ -75,10 +75,10 @@ class ClouderaAnalytics:
         self.client = streaming_client
         self.logger = logging.getLogger(__name__)
         self.topics = {
-            "moderation_events": "autoethos.moderation.events",
-            "agent_metrics": "autoethos.agent.metrics",
-            "deliberation_analytics": "autoethos.deliberation.analytics",
-            "audit_logs": "autoethos.audit.logs"
+            "moderation_events": "ethiq.moderation.events",
+            "agent_metrics": "ethiq.agent.metrics",
+            "deliberation_analytics": "ethiq.deliberation.analytics",
+            "audit_logs": "ethiq.audit.logs"
         }
     
     async def initialize_topics(self) -> bool:
@@ -151,7 +151,7 @@ class ClouderaAnalytics:
                 "timestamp": datetime.now().isoformat(),
                 "data_size": len(str(audit_data.get("data", {}))),
                 "source_ip": audit_data.get("source_ip", "127.0.0.1"),
-                "user_agent": audit_data.get("user_agent", "AutoEthos-System")
+                "user_agent": audit_data.get("user_agent", "EthIQ-System")
             }
         )
 

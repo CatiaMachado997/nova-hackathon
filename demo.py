@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AutoEthos Demo Script
+EthIQ Demo Script
 Demonstrates the ethical deliberation system with example scenarios
 """
 
@@ -13,8 +13,8 @@ from typing import Dict, Any, List
 from agents import EthicsCommander, AuditLogger
 
 
-class AutoEthosDemo:
-    """Demo class for showcasing AutoEthos capabilities"""
+class EthIQDemo:
+    """Demo class for showcasing EthIQ capabilities"""
     
     def __init__(self):
         self.commander = EthicsCommander()
@@ -109,13 +109,13 @@ class AutoEthosDemo:
     async def run_demo(self):
         """Run the complete demo"""
         print("=" * 80)
-        print("🤖 AutoEthos - Ethical Intelligence Demo")
+        print("🤖 EthIQ - Ethical Intelligence Demo")
         print("=" * 80)
         print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print()
         
         # Initialize system
-        print("🚀 Initializing AutoEthos system...")
+        print("🚀 Initializing EthIQ system...")
         await self._initialize_system()
         print("✅ System initialized successfully")
         print()
@@ -257,7 +257,7 @@ class AutoEthosDemo:
 
 async def main():
     """Main demo function"""
-    demo = AutoEthosDemo()
+    demo = EthIQDemo()
     await demo.run_demo()
 
 

@@ -1,5 +1,5 @@
 """
-Base Agent Class for AutoEthos Ethical Deliberation System
+Base Agent Class for EthIQ Ethical Deliberation System
 """
 
 import asyncio
@@ -9,6 +9,17 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pydantic import BaseModel, Field
+import os
+from tools.training_data_loader import TrainingDataLoader, get_agent_examples, create_agent_prompt
+
+try:
+    import openai
+except ImportError:
+    openai = None
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
 
 logger = logging.getLogger(__name__)
 
@@ -100,3 +111,57 @@ class BaseAgent(ABC):
     
     def __repr__(self):
         return f"<{self.__class__.__name__}(name='{self.name}', framework='{self.ethical_framework}')>" 
+
+
+class LLMEthicsAgent(BaseAgent):
+    def __init__(self, name: str, description: str, ethical_framework: str, agent_type: str):
+        super().__init__(name, description, ethical_framework)
+        self.agent_type = agent_type
+        self.llm_provider = os.getenv("LLM_PROVIDER", "mock").lower()
+        self.openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        self.training_loader = TrainingDataLoader()
+
+    def build_prompt(self, content: str) -> str:
+        return create_agent_prompt(self.agent_type, content, num_examples=2)
+
+    def call_llm(self, prompt: str) -> str:
+        if self.llm_provider == "openai":
+            if not openai or not self.openai_api_key:
+                raise RuntimeError("OpenAI or API key not available")
+            openai.api_key = self.openai_api_key
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=512,
+                temperature=0.2,
+            )
+            return response.choices[0].message["content"]
+        elif self.llm_provider == "gemini":
+            if not genai or not self.google_api_key:
+                raise RuntimeError("Google Generative AI or API key not available")
+            genai.configure(api_key=self.google_api_key)
+            model = genai.GenerativeModel("gemini-pro")
+            response = model.generate_content(prompt)
+            return response.text
+        else:
+            # Mock mode for local/dev
+            return "[MOCK LLM RESPONSE] This is a simulated moderation decision."
+
+    async def deliberate(self, content: str, context: Dict[str, Any]) -> AgentResponse:
+        prompt = self.build_prompt(content)
+        llm_output = self.call_llm(prompt)
+        # For demo, parse output simply; in real use, parse JSON or structure
+        return AgentResponse(
+            agent_name=self.name,
+            reasoning=llm_output,
+            decision="flagged" if "flag" in llm_output.lower() else "approved",
+            confidence=0.9,
+            ethical_framework=self.ethical_framework,
+            supporting_evidence=[],
+        )
+
+    async def process_task(self, task: Dict[str, Any]) -> AgentResponse:
+        content = task.get("content", "")
+        context = task.get("context", {})
+        return await self.deliberate(content, context) 

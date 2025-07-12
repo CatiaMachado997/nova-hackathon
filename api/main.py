@@ -1,5 +1,5 @@
 """
-Main FastAPI Application for AutoEthos Ethical Deliberation System
+Main FastAPI Application for EthIQ Ethical Deliberation System
 Provides REST API endpoints for content moderation and agent management
 """
 
@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
     global ethics_commander, audit_logger, start_time
     
     # Startup
-    logger.info("Starting AutoEthos Ethical Deliberation System...")
+    logger.info("Starting EthIQ Ethical Deliberation System...")
     start_time = time.time()
     
     # Initialize agents
@@ -80,7 +80,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("Shutting down AutoEthos system...")
+    logger.info("Shutting down EthIQ system...")
     if ethics_commander:
         await ethics_commander.shutdown_all_agents()
     logger.info("System shutdown complete")
@@ -88,7 +88,7 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="AutoEthos - Ethical Intelligence API",
+    title="EthIQ - Ethical Intelligence API",
     description="AI-powered ethical content moderation through multi-agent deliberation",
     version="1.0.0",
     lifespan=lifespan
@@ -122,7 +122,7 @@ async def get_audit_logger() -> AuditLogger:
 async def root():
     """Root endpoint with system information"""
     return {
-        "name": "AutoEthos - Ethical Intelligence",
+        "name": "EthIQ - Ethical Intelligence",
         "description": "AI-powered ethical content moderation through multi-agent deliberation",
         "version": "1.0.0",
         "status": "operational"
@@ -317,7 +317,7 @@ async def get_moderation_history(logger_agent: AuditLogger = Depends(get_audit_l
             final_decision=log.get("final_decision", {}).get("decision", "unknown"),
             agents_involved=log.get("metadata", {}).get("agents_involved", 0),
             deliberation_duration=log.get("metadata", {}).get("deliberation_duration", 0),
-            platform=log.get("metadata", {}).get("platform", "AutoEthos")
+            platform=log.get("metadata", {}).get("platform", "EthIQ")
         ))
     
     return history

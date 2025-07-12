@@ -1,4 +1,4 @@
-// AutoEthos Dashboard JavaScript
+// EthIQ Dashboard JavaScript
 
 // Global variables
 let socket;

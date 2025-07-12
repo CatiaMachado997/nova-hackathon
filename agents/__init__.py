@@ -1,5 +1,5 @@
 """
-AutoEthos - The Ethical Arbiter
+EthIQ - The Ethical Arbiter
 Multi-agent system for ethical content moderation deliberation
 """
 

@@ -1,0 +1,7 @@
+Content: "Let's organize a mass protest to shut down the hospital during peak hours. The government needs to feel the pressure of our demands, even if it means people can't get emergency care."
+
+Analysis: This content promotes actions that would cause significant harm to public health and safety. The utilitarian perspective considers the greatest good for the greatest number, and blocking emergency medical care would cause widespread suffering and potential loss of life, far outweighing any political benefits.
+
+Decision: FLAGGED - High risk of harm to public safety and health
+Confidence: 0.95
+Reasoning: The proposed action would cause direct, foreseeable harm to vulnerable individuals seeking emergency medical care, violating the principle of maximizing overall well-being. 
