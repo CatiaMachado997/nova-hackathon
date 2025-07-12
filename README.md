@@ -24,11 +24,10 @@ A modular multi-agent system enables dynamic ethical reasoning:
 
 Modern digital platforms struggle with ethically ambiguous content that current moderation tools are unequipped to handle. These include:
 
- 
-- Emotionally triggering or mentally damaging content  
 - Satirical and politically charged content  
 - Cultural and religious conflicts  
-- AI-generated misinformation or harmful deepfakes 
+- AI-generated misinformation or harmful deepfakes  
+- Emotionally triggering or mentally damaging content  
 
 Most moderation systems are rule-based, opaque, and inflexible—leading to inconsistent enforcement, backlash, and harm to users' psychological well-being.
 
@@ -66,7 +65,7 @@ EthIQ can ethically moderate content across a wide range of sectors:
 - Innovative ethical debate simulation by AI  
 - Tackles moderation challenges in the AI age  
 - Sensitive to psychological, cultural, and ethical factors  
-- Easily integrates with GenAI AgentOS, Notion, and Cloudera  
+- **Built-in transparency** for trust, auditability, and defensible decision-making  
 
 ---
 
@@ -78,7 +77,7 @@ EthIQ can ethically moderate content across a wide range of sectors:
 - ✅ Usage guide and examples  
 - ✅ System architecture overview  
 - ✅ Agent structure and behaviors  
-- ✅ API endpoints (if any)  
+- ✅ API endpoints  
 - ✅ Dependencies and installation steps  
 
 *Stay tuned for the full developer documentation.*
