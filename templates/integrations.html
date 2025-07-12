@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoEthos - Integrations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .integration-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .integration-card.error {
+            border-left-color: #f44336;
+        }
+        
+        .integration-card.warning {
+            border-left-color: #ff9800;
+        }
+        
+        .integration-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .integration-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .integration-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .status-inactive {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .status-error {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .integration-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .cloudera-analytics {
+            margin-top: 20px;
+        }
+        
+        .refresh-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        .refresh-btn:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 AutoEthos Integrations</h1>
+            <nav>
+                <a href="/">Dashboard</a>
+                <a href="/moderate">Moderate</a>
+                <a href="/agents">Agents</a>
+                <a href="/analytics">Analytics</a>
+                <a href="/history">History</a>
+                <a href="/integrations" class="active">Integrations</a>
+            </nav>
+        </header>
+
+        <main>
+            <div class="section">
+                <h2>🔗 System Integrations</h2>
+                <p>Monitor the status of all external integrations and protocols.</p>
+                
+                <button class="refresh-btn" onclick="refreshIntegrations()">🔄 Refresh Status</button>
+                
+                <div id="integrations-container">
+                    <div class="integration-card">
+                        <div class="integration-header">
+                            <div class="integration-name">🔄 GenAI AgentOS Protocol</div>
+                            <div class="integration-status status-active">Active</div>
+                        </div>
+                        <p>Agent orchestration and messaging through GenAI AgentOS Protocol</p>
+                        <div class="integration-details">
+                            <strong>Features:</strong>
+                            <ul>
+                                <li>Agent registration and lifecycle management</li>
+                                <li>Protocol-based messaging between agents</li>
+                                <li>Orchestrated deliberation workflows</li>
+                                <li>Real-time agent status monitoring</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="integration-card">
+                        <div class="integration-header">
+                            <div class="integration-name">☁️ Cloudera Data Streaming</div>
+                            <div class="integration-status status-active">Active</div>
+                        </div>
+                        <p>Real-time data streaming and analytics through Cloudera platform</p>
+                        <div class="integration-details">
+                            <strong>Features:</strong>
+                            <ul>
+                                <li>Kafka-based event streaming</li>
+                                <li>Real-time metrics and analytics</li>
+                                <li>Historical data analysis</li>
+                                <li>Cluster health monitoring</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="integration-card">
+                        <div class="integration-header">
+                            <div class="integration-name">📝 Notion Integration</div>
+                            <div class="integration-status status-active">Active</div>
+                        </div>
+                        <p>Audit logging and documentation through Notion</p>
+                        <div class="integration-details">
+                            <strong>Features:</strong>
+                            <ul>
+                                <li>Automated audit trail logging</li>
+                                <li>Deliberation documentation</li>
+                                <li>Decision history tracking</li>
+                                <li>Collaborative documentation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Cloudera Analytics</h2>
+                <p>Real-time analytics and metrics from Cloudera platform.</p>
+                
+                <button class="refresh-btn" onclick="refreshClouderaAnalytics()">🔄 Refresh Analytics</button>
+                
+                <div id="cloudera-analytics" class="cloudera-analytics">
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">15.3</div>
+                            <div class="metric-label">Events/Minute</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">245.7ms</div>
+                            <div class="metric-label">Avg Processing Time</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">98.5%</div>
+                            <div class="metric-label">Agent Uptime</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">87.2%</div>
+                            <div class="metric-label">Consensus Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🧪 Test Integrations</h2>
+                <p>Test the integrations with sample content moderation.</p>
+                
+                <div class="test-section">
+                    <h3>Test GenAI AgentOS Protocol</h3>
+                    <textarea id="agentos-content" placeholder="Enter content to test with AgentOS Protocol..." rows="4" style="width: 100%; margin: 10px 0;"></textarea>
+                    <button class="refresh-btn" onclick="testAgentOS()">🚀 Test AgentOS Protocol</button>
+                    <div id="agentos-result" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 5px; display: none;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        // Refresh integrations status
+        function refreshIntegrations() {
+            fetch('/api/integrations/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateIntegrationsUI(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching integrations status:', error);
+                });
+        }
+        
+        // Refresh Cloudera analytics
+        function refreshClouderaAnalytics() {
+            fetch('/api/cloudera/analytics')
+                .then(response => response.json())
+                .then(data => {
+                    updateClouderaAnalytics(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching Cloudera analytics:', error);
+                });
+        }
+        
+        // Test AgentOS Protocol
+        function testAgentOS() {
+            const content = document.getElementById('agentos-content').value;
+            if (!content) {
+                alert('Please enter content to test');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('agentos-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔄 Testing with AgentOS Protocol...';
+            
+            fetch('/api/submit_moderation_agentos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    content: content,
+                    context: {
+                        content_type: 'text',
+                        platform: 'test',
+                        audience_size: 1000
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    resultDiv.innerHTML = `❌ Error: ${data.error}`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h4>✅ AgentOS Protocol Test Result</h4>
+                        <p><strong>Decision:</strong> ${data.final_decision}</p>
+                        <p><strong>Confidence:</strong> ${(data.confidence * 100).toFixed(1)}%</p>
+                        <p><strong>Processing Time:</strong> ${(data.processing_time * 1000).toFixed(2)}ms</p>
+                        <p><strong>Protocol Used:</strong> ${data.protocol_used || 'GenAI AgentOS Protocol'}</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+            });
+        }
+        
+        // Update integrations UI
+        function updateIntegrationsUI(data) {
+            const container = document.getElementById('integrations-container');
+            
+            // Update AgentOS status
+            if (data.agentos) {
+                const agentosCard = container.querySelector('.integration-card:nth-child(1)');
+                const statusDiv = agentosCard.querySelector('.integration-status');
+                statusDiv.textContent = data.agentos.status;
+                statusDiv.className = `integration-status status-${data.agentos.status}`;
+            }
+            
+            // Update Cloudera status
+            if (data.cloudera) {
+                const clouderaCard = container.querySelector('.integration-card:nth-child(2)');
+                const statusDiv = clouderaCard.querySelector('.integration-status');
+                statusDiv.textContent = data.cloudera.status;
+                statusDiv.className = `integration-status status-${data.cloudera.status}`;
+            }
+        }
+        
+        // Update Cloudera analytics
+        function updateClouderaAnalytics(data) {
+            if (data.data && data.data.real_time_metrics) {
+                const metrics = data.data.real_time_metrics;
+                const analyticsDiv = document.getElementById('cloudera-analytics');
+                
+                analyticsDiv.innerHTML = `
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">${metrics.moderation_events_per_minute}</div>
+                            <div class="metric-label">Events/Minute</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${metrics.average_processing_time_ms}ms</div>
+                            <div class="metric-label">Avg Processing Time</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${metrics.agent_uptime_percentage}%</div>
+                            <div class="metric-label">Agent Uptime</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">${metrics.consensus_rate}%</div>
+                            <div class="metric-label">Consensus Rate</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Socket events
+        socket.on('connect', function() {
+            console.log('Connected to dashboard');
+        });
+        
+        socket.on('moderation_result_agentos', function(data) {
+            console.log('AgentOS moderation result:', data);
+        });
+        
+        // Initial load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshIntegrations();
+            refreshClouderaAnalytics();
+        });
+    </script>
+</body>
+</html> 
