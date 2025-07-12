@@ -10,12 +10,10 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from .base_agent import BaseAgent, AgentResponse, AgentMessage
-from .debate_agents import (
-    UtilitarianAgent,
-    DeontologicalAgent,
-    CulturalContextAgent,
-    FreeSpeechAgent
-)
+from .utilitarian_agent import UtilitarianAgent
+from .deontological_agent import DeontologicalAgent
+from .cultural_context_agent import CulturalContextAgent
+from .free_speech_agent import FreeSpeechAgent
 
 logger = logging.getLogger(__name__)
 

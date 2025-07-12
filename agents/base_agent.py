@@ -152,10 +152,18 @@ class LLMEthicsAgent(BaseAgent):
         prompt = self.build_prompt(content)
         llm_output = self.call_llm(prompt)
         # For demo, parse output simply; in real use, parse JSON or structure
+        # Map decisions to the expected format
+        if "flag" in llm_output.lower() or "remove" in llm_output.lower():
+            decision = "REMOVE"
+        elif "review" in llm_output.lower():
+            decision = "FLAG_FOR_REVIEW"
+        else:
+            decision = "ALLOW"
+            
         return AgentResponse(
             agent_name=self.name,
             reasoning=llm_output,
-            decision="flagged" if "flag" in llm_output.lower() else "approved",
+            decision=decision,
             confidence=0.9,
             ethical_framework=self.ethical_framework,
             supporting_evidence=[],
