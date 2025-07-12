@@ -1,0 +1,7 @@
+Content: "Hateful comments mocking religious practices and encouraging violence against religious communities. Content promotes religious intolerance and discrimination."
+
+Analysis: This content violates religious ethics by promoting hatred, intolerance, and violence against religious communities, which goes against moral principles of respect and compassion.
+
+Decision: REMOVE
+Confidence: 0.95
+Reasoning: Content promotes religious hatred and intolerance, violating fundamental moral principles of respect for diverse religious beliefs and human dignity. 

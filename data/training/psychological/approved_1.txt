@@ -1,0 +1,7 @@
+Content: "Educational video about recognizing signs of depression and encouraging people to seek professional help. Includes resources for mental health support."
+
+Analysis: This content promotes mental health awareness, provides helpful resources, and encourages positive help-seeking behaviors without causing psychological harm.
+
+Decision: ALLOW
+Confidence: 0.90
+Reasoning: Content promotes mental health awareness and provides constructive support resources, contributing positively to psychological well-being. 

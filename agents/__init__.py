@@ -9,6 +9,9 @@ from .utilitarian_agent import UtilitarianAgent
 from .deontological_agent import DeontologicalAgent
 from .cultural_context_agent import CulturalContextAgent
 from .free_speech_agent import FreeSpeechAgent
+from .psychological_agent import PsychologicalAgent
+from .religious_ethics_agent import ReligiousEthicsAgent
+from .financial_impact_agent import FinancialImpactAgent
 from .consensus_agent import ConsensusAgent
 from .audit_logger import AuditLogger
 
@@ -20,6 +23,9 @@ __all__ = [
     'DeontologicalAgent',
     'CulturalContextAgent',
     'FreeSpeechAgent',
+    'PsychologicalAgent',
+    'ReligiousEthicsAgent',
+    'FinancialImpactAgent',
     'ConsensusAgent',
     'AuditLogger'
 ]

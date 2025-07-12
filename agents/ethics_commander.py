@@ -14,6 +14,9 @@ from .utilitarian_agent import UtilitarianAgent
 from .deontological_agent import DeontologicalAgent
 from .cultural_context_agent import CulturalContextAgent
 from .free_speech_agent import FreeSpeechAgent
+from .psychological_agent import PsychologicalAgent
+from .religious_ethics_agent import ReligiousEthicsAgent
+from .financial_impact_agent import FinancialImpactAgent
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +39,10 @@ class EthicsCommander(BaseAgent):
             "utilitarian": UtilitarianAgent(),
             "deontological": DeontologicalAgent(),
             "cultural": CulturalContextAgent(),
-            "free_speech": FreeSpeechAgent()
+            "free_speech": FreeSpeechAgent(),
+            "psychological": PsychologicalAgent(),
+            "religious_ethics": ReligiousEthicsAgent(),
+            "financial_impact": FinancialImpactAgent()
         }
         
         self.active_tasks = {}
