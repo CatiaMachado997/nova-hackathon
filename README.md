@@ -1,5 +1,5 @@
 # EthIQ – Ethical Intelligence for Content Moderation  
-*“It’s not just moderation. It’s ethical intelligence.”*
+*“It’s not just moderation. It’s the future of ethical intelligence.”*
 
 ## Overview
 
