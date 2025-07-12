@@ -1,16 +1,14 @@
-# AutoEthos - Ethical Intelligence Platform
+# EthIQ – Ethical Intelligence for Content Moderation  
+*“It’s not just moderation. It’s the future of ethical intelligence.”*
 
-> **AI-powered ethical content moderation through multi-agent deliberation**
+## Overview
 
-AutoEthos is an innovative ethical intelligence platform designed for content moderation at scale. Rather than issuing binary judgments, AutoEthos simulates ethical deliberation using multiple reasoning agents and provides transparent justifications.
+**EthIQ** is an AI-powered ethical moderation system designed to handle complex and sensitive content decisions with depth, transparency, and nuance. Rather than issuing binary judgments, EthIQ simulates ethical deliberation using multiple reasoning agents that represent diverse moral perspectives.
 
-## 🎯 Problem Statement
+### How It Works
 
-Modern platforms struggle with ambiguous content involving:
-- **Satire and political speech** - Balancing humor with offense
-- **Cultural conflicts** - Navigating diverse cultural sensitivities  
-- **AI misinformation** - Detecting AI-generated deceptive content
-- **Educational vs. harmful content** - Distinguishing valuable from dangerous material
+A modular multi-agent system enables dynamic ethical reasoning:
+
 - **Ethics Commander** – Accepts moderation tasks and coordinates the debate process.
 - **Debate Agents**:
   - `UtilitarianAgent`: Weighs harm vs. benefit  
