@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EthIQ - Content Moderation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">🤖 EthIQ</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Dashboard</a>
+                <a class="nav-link active" href="/moderate">Moderate</a>
+                <a class="nav-link" href="/agents">Agents</a>
+                <a class="nav-link" href="/analytics">Analytics</a>
+                <a class="nav-link" href="/integrations">Integrations</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Content Moderation</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="moderationForm">
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Content to Moderate</label>
+                                <textarea class="form-control" id="content" name="content" rows="6" 
+                                    placeholder="Enter content to be ethically analyzed..."></textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contentType" class="form-label">Content Type</label>
+                                        <select class="form-select" id="contentType" name="content_type">
+                                            <option value="text">Text</option>
+                                            <option value="image">Image</option>
+                                            <option value="video">Video</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="platform" class="form-label">Platform</label>
+                                        <select class="form-select" id="platform" name="platform">
+                                            <option value="social_media">Social Media</option>
+                                            <option value="news">News</option>
+                                            <option value="forum">Forum</option>
+                                            <option value="blog">Blog</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="audienceSize" class="form-label">Expected Audience Size</label>
+                                        <input type="number" class="form-control" id="audienceSize" name="audience_size" 
+                                            value="1000" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="audienceDiversity" class="form-label">Audience Diversity</label>
+                                        <select class="form-select" id="audienceDiversity" name="audience_diversity">
+                                            <option value="high">High</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="low">Low</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="vulnerableAudience" name="vulnerable_audience">
+                                    <label class="form-check-label" for="vulnerableAudience">
+                                        Includes vulnerable audience
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="educationalValue" name="educational_value">
+                                    <label class="form-check-label" for="educationalValue">
+                                        Has educational value
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="publicInterest" name="public_interest">
+                                    <label class="form-check-label" for="publicInterest">
+                                        Serves public interest
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Analyze Content
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Recent Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentAnalysis">
+                            <p class="text-muted">No recent analysis</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Modal -->
+        <div class="modal fade" id="resultsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Analysis Results</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" id="resultsContent">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script>
+        document.getElementById('moderationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const spinner = submitBtn.querySelector('.spinner-border');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            spinner.classList.remove('d-none');
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert checkboxes to boolean
+            data.vulnerable_audience = formData.has('vulnerable_audience');
+            data.educational_value = formData.has('educational_value');
+            data.public_interest = formData.has('public_interest');
+            
+            fetch('/api/submit_moderation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                showResults(result);
+                updateRecentAnalysis(result);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error analyzing content. Please try again.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                spinner.classList.add('d-none');
+            });
+        });
+
+        function showResults(result) {
+            const modal = new bootstrap.Modal(document.getElementById('resultsModal'));
+            const content = document.getElementById('resultsContent');
+            
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Final Decision</h6>
+                        <span class="badge ${getDecisionClass(result.final_decision)}">${result.final_decision}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Confidence</h6>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: ${result.confidence * 100}%"></div>
+                        </div>
+                        <small>${(result.confidence * 100).toFixed(1)}%</small>
+                    </div>
+                </div>
+                <hr>
+                <h6>Reasoning</h6>
+                <p>${result.reasoning}</p>
+                <hr>
+                <h6>Agent Responses</h6>
+                <div class="row">
+                    ${Object.entries(result.individual_responses || {}).map(([agent, response]) => `
+                        <div class="col-md-6 mb-2">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">${agent}</h6>
+                                    <span class="badge ${getDecisionClass(response.decision)}">${response.decision}</span>
+                                    <small class="d-block">Confidence: ${(response.confidence * 100).toFixed(1)}%</small>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            modal.show();
+        }
+
+        function getDecisionClass(decision) {
+            switch(decision) {
+                case 'ALLOW': return 'bg-success';
+                case 'REMOVE': return 'bg-danger';
+                case 'FLAG_FOR_REVIEW': return 'bg-warning';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function updateRecentAnalysis(result) {
+            const container = document.getElementById('recentAnalysis');
+            const time = new Date().toLocaleTimeString();
+            
+            container.innerHTML = `
+                <div class="mb-2">
+                    <small class="text-muted">${time}</small>
+                    <div class="d-flex justify-content-between">
+                        <span class="badge ${getDecisionClass(result.final_decision)}">${result.final_decision}</span>
+                        <small>${(result.confidence * 100).toFixed(1)}%</small>
+                    </div>
+                </div>
+            ` + container.innerHTML;
+        }
+    </script>
+</body>
+</html> 
