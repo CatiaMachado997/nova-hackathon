@@ -1,0 +1,27 @@
+agent:
+  capabilities:
+  - agent_orchestration
+  - consensus_building
+  - decision_synthesis
+  description: Master agent that orchestrates ethical deliberation among specialist
+    agents
+  ethical_framework: Multi-Framework Orchestration
+  name: EthicsCommander
+  tools:
+  - agent_communication
+  - consensus_algorithm
+  - decision_framework
+  type: orchestrator
+dependencies:
+- openai
+- pydantic
+- asyncio
+llm:
+  config:
+    max_tokens: 1024
+    temperature: 0.1
+  model: gpt-4
+  provider: openai
+training:
+  data_path: null
+  examples_count: 10

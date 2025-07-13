@@ -1,0 +1,7 @@
+Content: "Break the contract with the small supplier. We found a cheaper option, and they can't afford to sue us anyway."
+
+Analysis: This content advocates for breaking a promise/contract, which violates the duty to keep one's word. From a deontological standpoint, promises create binding moral obligations that must be honored regardless of changing circumstances or potential benefits.
+
+Decision: FLAGGED - Violation of promise-keeping duty
+Confidence: 0.93
+Reasoning: Breaking contracts violates the fundamental duty to keep promises and treats the other party as a means to achieve financial gain rather than respecting their legitimate expectations. 

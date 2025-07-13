@@ -1,0 +1,7 @@
+Content: "Lie to the customer about the product's safety record. We need to make this sale and the truth would hurt our profits."
+
+Analysis: This content advocates for deception, which violates the categorical imperative. From a deontological perspective, lying is inherently wrong regardless of consequences. The principle of universalizability shows that if everyone lied when convenient, trust and communication would break down.
+
+Decision: FLAGGED - Violation of truth-telling duty
+Confidence: 0.96
+Reasoning: Lying violates the fundamental duty to tell the truth and cannot be universalized without contradiction, making it inherently unethical regardless of potential benefits. 

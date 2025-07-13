@@ -1,0 +1,24 @@
+agent:
+  capabilities:
+  - speech_rights
+  - expression_analysis
+  - censorship_evaluation
+  description: Agent prioritizing free speech and expression in ethical reasoning
+  ethical_framework: Free Speech Ethics
+  name: FreeSpeechAgent
+  tools:
+  - training_data_loader
+  - llm_integration
+  type: ethical
+dependencies:
+- openai
+- pydantic
+llm:
+  config:
+    max_tokens: 512
+    temperature: 0.2
+  model: gpt-3.5-turbo
+  provider: openai
+training:
+  data_path: data/training/free_speech
+  examples_count: 10

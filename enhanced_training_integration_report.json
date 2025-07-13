@@ -1,0 +1,87 @@
+{
+  "integration_status": "completed",
+  "enhanced_agents": [
+    "psychological",
+    "temporal",
+    "consensus",
+    "deontological",
+    "religious_ethics",
+    "financial_impact",
+    "free_speech",
+    "cultural_context",
+    "utilitarian"
+  ],
+  "test_results": {
+    "psychological": {
+      "examples_loaded": 2,
+      "status": "success"
+    },
+    "cultural_context": {
+      "examples_loaded": 2,
+      "status": "success"
+    },
+    "temporal": {
+      "examples_loaded": 0,
+      "status": "success"
+    },
+    "utilitarian": {
+      "examples_loaded": 2,
+      "status": "success"
+    },
+    "free_speech": {
+      "examples_loaded": 2,
+      "status": "success"
+    },
+    "religious_ethics": {
+      "examples_loaded": 2,
+      "status": "success"
+    },
+    "financial_impact": {
+      "examples_loaded": 2,
+      "status": "success"
+    },
+    "deontological": {
+      "examples_loaded": 2,
+      "status": "success"
+    }
+  },
+  "files_integrated": [
+    {
+      "agent": "psychological",
+      "files_count": 10
+    },
+    {
+      "agent": "temporal",
+      "files_count": 3
+    },
+    {
+      "agent": "consensus",
+      "files_count": 1
+    },
+    {
+      "agent": "deontological",
+      "files_count": 2
+    },
+    {
+      "agent": "religious_ethics",
+      "files_count": 4
+    },
+    {
+      "agent": "financial_impact",
+      "files_count": 5
+    },
+    {
+      "agent": "free_speech",
+      "files_count": 5
+    },
+    {
+      "agent": "cultural_context",
+      "files_count": 6
+    },
+    {
+      "agent": "utilitarian",
+      "files_count": 9
+    }
+  ],
+  "backup_created": true
+}

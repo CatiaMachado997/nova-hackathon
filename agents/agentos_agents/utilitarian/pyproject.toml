@@ -1,0 +1,21 @@
+[project]
+name = "utilitarian-agent"
+version = "1.0.0"
+description = "Utilitarian ethical reasoning agent for GenAI AgentOS Protocol"
+authors = [
+    {name = "EthIQ Team", email = "team@ethiq.ai"}
+]
+dependencies = [
+    "genai-session>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "asyncio",
+    "typing-extensions>=4.0.0"
+]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."] 

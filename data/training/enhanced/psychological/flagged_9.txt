@@ -1,0 +1,16 @@
+Content: BREAKING: Leaked video shows world leader endorsing alien conspiracy theories.
+
+Analysis: This content falls under the category of AI Deepfake. This is a digitally fabricated video meant to deceive viewers into believing a false political stance.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to AI Deepfake concerns
+
+Notes: Example of political deepfake; assess for misinformation harm vs. satire intent.
+
+Improvement Context: 
+
+Agent: PsychologicalAgent
+Category: AI Deepfake

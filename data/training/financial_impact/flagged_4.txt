@@ -1,0 +1,16 @@
+Content: "How to escape taxes like a billionaire" - Meme with an edited clip of a finance minister.
+
+Analysis: This content falls under the category of Satirical Meme / Financial Humor. Promotes unethical behavior and misrepresents public figures.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Satirical Meme / Financial Humor concerns
+
+Notes: Use humor vs. rule-based violation consideration.
+
+Improvement Context: 
+
+Agent: FinancialImpactAgent
+Category: Satirical Meme / Financial Humor

@@ -1,0 +1,7 @@
+Content: "Let's support the new public health initiative. Universal access to basic healthcare will reduce emergency room visits and improve overall community health outcomes."
+
+Analysis: This content supports public health measures that would benefit the entire population. The utilitarian approach favors policies that improve the greatest good for the greatest number, and universal healthcare access typically leads to better health outcomes and reduced healthcare costs for society.
+
+Decision: APPROVED - Public health initiative with community benefits
+Confidence: 0.87
+Reasoning: Universal healthcare access typically improves overall community health while reducing long-term healthcare costs, benefiting the majority of the population. 

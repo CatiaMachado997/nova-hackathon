@@ -1,0 +1,7 @@
+Content: "All Asians are good at math and all Latinos are lazy. These are just cultural differences, not stereotypes."
+
+Analysis: This content promotes harmful cultural stereotypes that oversimplify and misrepresent entire groups of people. The cultural context perspective recognizes that such generalizations ignore the diversity within cultures and can perpetuate discrimination and bias.
+
+Decision: FLAGGED - Harmful cultural stereotypes
+Confidence: 0.96
+Reasoning: Promoting cultural stereotypes ignores individual differences and cultural diversity, potentially contributing to discrimination and bias against entire groups of people. 

@@ -1,0 +1,113 @@
+agents:
+- agent_type: ethical
+  capabilities:
+  - utility_analysis
+  - cost_benefit
+  - consequentialist_reasoning
+  config:
+    max_tokens: 512
+    temperature: 0.2
+  dependencies:
+  - openai
+  - pydantic
+  description: Agent applying utilitarian ethical reasoning (maximizing overall good)
+  ethical_framework: Utilitarianism
+  llm_provider: openai
+  model: gpt-3.5-turbo
+  name: UtilitarianAgent
+  tools:
+  - training_data_loader
+  - llm_integration
+  training_data_path: data/training/utilitarian
+- agent_type: ethical
+  capabilities:
+  - moral_duty
+  - rights_analysis
+  - rule_based_reasoning
+  config:
+    max_tokens: 512
+    temperature: 0.2
+  dependencies:
+  - openai
+  - pydantic
+  description: Agent applying deontological (duty-based) ethical reasoning
+  ethical_framework: Deontological Ethics
+  llm_provider: openai
+  model: gpt-3.5-turbo
+  name: DeontologicalAgent
+  tools:
+  - training_data_loader
+  - llm_integration
+  training_data_path: data/training/deontological
+- agent_type: ethical
+  capabilities:
+  - cultural_sensitivity
+  - context_analysis
+  - diversity_awareness
+  config:
+    max_tokens: 512
+    temperature: 0.2
+  dependencies:
+  - openai
+  - pydantic
+  description: Agent considering cultural context and norms in ethical reasoning
+  ethical_framework: Cultural Context Ethics
+  llm_provider: openai
+  model: gpt-3.5-turbo
+  name: CulturalContextAgent
+  tools:
+  - training_data_loader
+  - llm_integration
+  training_data_path: data/training/cultural_context
+- agent_type: ethical
+  capabilities:
+  - speech_rights
+  - expression_analysis
+  - censorship_evaluation
+  config:
+    max_tokens: 512
+    temperature: 0.2
+  dependencies:
+  - openai
+  - pydantic
+  description: Agent prioritizing free speech and expression in ethical reasoning
+  ethical_framework: Free Speech Ethics
+  llm_provider: openai
+  model: gpt-3.5-turbo
+  name: FreeSpeechAgent
+  tools:
+  - training_data_loader
+  - llm_integration
+  training_data_path: data/training/free_speech
+- agent_type: orchestrator
+  capabilities:
+  - agent_orchestration
+  - consensus_building
+  - decision_synthesis
+  config:
+    max_tokens: 1024
+    temperature: 0.1
+  dependencies:
+  - openai
+  - pydantic
+  - asyncio
+  description: Master agent that orchestrates ethical deliberation among specialist
+    agents
+  ethical_framework: Multi-Framework Orchestration
+  llm_provider: openai
+  model: gpt-4
+  name: EthicsCommander
+  tools:
+  - agent_communication
+  - consensus_algorithm
+  - decision_framework
+  training_data_path: null
+created_at: '2025-07-13T21:48:59.256222'
+description: Ethical Intelligence for Content Moderation
+name: EthIQ
+project_config:
+  created_by: AgentMaker
+  framework: EthIQ
+  python_version: 3.8+
+updated_at: '2025-07-13T21:48:59.256264'
+version: 1.0.0

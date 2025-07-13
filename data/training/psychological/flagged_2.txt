@@ -1,0 +1,16 @@
+Content: God will punish those who don't follow this religion.
+
+Analysis: This content falls under the category of Religious Extremism. Threatens spiritual well-being
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Religious Extremism concerns
+
+Notes: Harsh tone, needs moderation
+
+Improvement Context: 
+
+Agent: PsychologicalAgent
+Category: Religious Extremism

@@ -1,0 +1,24 @@
+agent:
+  capabilities:
+  - utility_analysis
+  - cost_benefit
+  - consequentialist_reasoning
+  description: Agent applying utilitarian ethical reasoning (maximizing overall good)
+  ethical_framework: Utilitarianism
+  name: UtilitarianAgent
+  tools:
+  - training_data_loader
+  - llm_integration
+  type: ethical
+dependencies:
+- openai
+- pydantic
+llm:
+  config:
+    max_tokens: 512
+    temperature: 0.2
+  model: gpt-3.5-turbo
+  provider: openai
+training:
+  data_path: data/training/utilitarian
+  examples_count: 10

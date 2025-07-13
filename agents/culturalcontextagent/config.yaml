@@ -1,0 +1,24 @@
+agent:
+  capabilities:
+  - cultural_sensitivity
+  - context_analysis
+  - diversity_awareness
+  description: Agent considering cultural context and norms in ethical reasoning
+  ethical_framework: Cultural Context Ethics
+  name: CulturalContextAgent
+  tools:
+  - training_data_loader
+  - llm_integration
+  type: ethical
+dependencies:
+- openai
+- pydantic
+llm:
+  config:
+    max_tokens: 512
+    temperature: 0.2
+  model: gpt-3.5-turbo
+  provider: openai
+training:
+  data_path: data/training/cultural_context
+  examples_count: 10

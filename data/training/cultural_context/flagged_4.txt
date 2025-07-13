@@ -1,0 +1,16 @@
+Content: A meme showing a smiling cartoon of a religious figure with derogatory text.
+
+Analysis: This content falls under the category of Religious Insensitivity. Offensive to specific religious groups and culturally inappropriate.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Religious Insensitivity concerns
+
+Notes: Shared widely on Instagram with mixed reactions.
+
+Improvement Context: 
+
+Agent: CulturalContextAgent
+Category: Religious Insensitivity

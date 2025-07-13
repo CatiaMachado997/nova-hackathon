@@ -1,0 +1,16 @@
+Content: This post claims vaccines cause autism using an outdated, debunked study.
+
+Analysis: This content falls under the category of Health misinformation. Spreads scientifically disproven information with potential public health impact.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Health misinformation concerns
+
+Notes: Could cause anxiety or mistrust in health systems.
+
+Improvement Context: 
+
+Agent: PsychologicalAgent
+Category: Health misinformation

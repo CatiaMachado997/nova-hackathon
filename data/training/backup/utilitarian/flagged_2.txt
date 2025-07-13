@@ -1,0 +1,7 @@
+Content: "Share this fake news about the vaccine causing autism. We need to stop the government's vaccination program at all costs, even if it means more children will get sick."
+
+Analysis: This content promotes the spread of misinformation that could lead to decreased vaccination rates, resulting in preventable diseases and outbreaks. From a utilitarian standpoint, the potential harm to public health far exceeds any perceived benefits of resisting government programs.
+
+Decision: FLAGGED - Misinformation that could cause public health crisis
+Confidence: 0.92
+Reasoning: Promoting vaccine hesitancy through false information would likely cause more harm than good, leading to preventable illness and death in the community. 

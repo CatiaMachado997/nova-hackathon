@@ -7,219 +7,275 @@ import asyncio
 import json
 import logging
 from typing import Dict, Any, List, Optional
+import aiohttp
 from datetime import datetime
-from dataclasses import dataclass
 
-# Mock GenAI AgentOS Protocol classes (since the real package may not be available)
-class AgentOSAgent:
-    """Base agent class for GenAI AgentOS Protocol"""
-    
-    def __init__(self, agent_id: str, agent_type: str, capabilities: List[str]):
-        self.agent_id = agent_id
-        self.agent_type = agent_type
-        self.capabilities = capabilities
-        self.is_active = True
-        self.last_heartbeat = datetime.now()
-    
-    async def send_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        """Send a message through the AgentOS protocol"""
-        return {"status": "sent", "message_id": f"msg_{datetime.now().timestamp()}"}
-    
-    async def receive_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        """Receive a message through the AgentOS protocol"""
-        return {"status": "received", "processed": True}
+logger = logging.getLogger(__name__)
 
-
-class AgentOSRegistry:
-    """Agent registry for GenAI AgentOS Protocol"""
+class RealAgentOSIntegration:
+    """Real GenAI AgentOS Integration for EthIQ"""
     
     def __init__(self):
-        self.agents: Dict[str, AgentOSAgent] = {}
-        self.agent_groups: Dict[str, List[str]] = {}
-    
-    def register_agent(self, agent: AgentOSAgent) -> bool:
-        """Register an agent with the protocol"""
-        self.agents[agent.agent_id] = agent
-        if agent.agent_type not in self.agent_groups:
-            self.agent_groups[agent.agent_type] = []
-        self.agent_groups[agent.agent_type].append(agent.agent_id)
-        return True
-    
-    def get_agent(self, agent_id: str) -> Optional[AgentOSAgent]:
-        """Get an agent by ID"""
-        return self.agents.get(agent_id)
-    
-    def get_agents_by_type(self, agent_type: str) -> List[AgentOSAgent]:
-        """Get all agents of a specific type"""
-        agent_ids = self.agent_groups.get(agent_type, [])
-        return [self.agents[aid] for aid in agent_ids if aid in self.agents]
-
-
-class AgentOSOrchestrator:
-    """Orchestrator for managing agent interactions through GenAI AgentOS Protocol"""
-    
-    def __init__(self):
-        self.registry = AgentOSRegistry()
-        self.message_queue: List[Dict[str, Any]] = []
-        self.logger = logging.getLogger(__name__)
-    
-    async def register_ethics_agents(self, agents: Dict[str, Any]) -> bool:
-        """Register all ethics agents with the AgentOS protocol"""
+        self.agentos_url = "http://localhost:8001"
+        self.jwt_token = None
+        self.registered_agents = {}
+        self.session = None
+        
+    async def initialize(self):
+        """Initialize connection to real AgentOS"""
         try:
-            # Register Ethics Commander
-            commander_agent = AgentOSAgent(
-                agent_id="ethics_commander",
-                agent_type="orchestrator",
-                capabilities=["deliberation", "consensus", "decision_making"]
-            )
-            self.registry.register_agent(commander_agent)
+            self.session = aiohttp.ClientSession()
             
-            # Register Debate Agents
-            debate_agents = [
-                ("utilitarian", "debate", ["utility_analysis", "cost_benefit"]),
-                ("deontological", "debate", ["moral_duty", "rights_analysis"]),
-                ("cultural", "debate", ["cultural_sensitivity", "context_analysis"]),
-                ("free_speech", "debate", ["speech_rights", "expression_analysis"])
-            ]
-            
-            for agent_name, agent_type, capabilities in debate_agents:
-                agent = AgentOSAgent(
-                    agent_id=agent_name,
-                    agent_type=agent_type,
-                    capabilities=capabilities
-                )
-                self.registry.register_agent(agent)
-            
-            # Register Audit Logger
-            audit_agent = AgentOSAgent(
-                agent_id="audit_logger",
-                agent_type="logger",
-                capabilities=["logging", "metrics", "audit_trail"]
-            )
-            self.registry.register_agent(audit_agent)
-            
-            self.logger.info(f"Registered {len(self.registry.agents)} agents with AgentOS Protocol")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"Failed to register agents with AgentOS Protocol: {e}")
-            return False
-    
-    async def orchestrate_deliberation(self, task_id: str, content: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Orchestrate deliberation using AgentOS Protocol messaging"""
-        try:
-            # Get all debate agents
-            debate_agents = self.registry.get_agents_by_type("debate")
-            commander = self.registry.get_agent("ethics_commander")
-            
-            if not commander or not debate_agents:
-                raise Exception("Required agents not found in registry")
-            
-            # Phase 1: Individual Analysis through AgentOS Protocol
-            individual_responses = {}
-            for agent in debate_agents:
-                message = {
-                    "task_id": task_id,
-                    "phase": "individual_analysis",
-                    "content": content,
-                    "context": context,
-                    "timestamp": datetime.now().isoformat()
+            # Authenticate with AgentOS
+            auth_response = await self.session.post(
+                f"{self.agentos_url}/auth/login",
+                json={
+                    "username": "ethiq_user",
+                    "password": "ethiq_password"
                 }
+            )
+            
+            if auth_response.status == 200:
+                auth_data = await auth_response.json()
+                self.jwt_token = auth_data.get("access_token")
+                logger.info("✅ Authenticated with real AgentOS")
+            else:
+                logger.warning("⚠️ Could not authenticate with AgentOS, using mock mode")
+                self.jwt_token = None
                 
-                response = await agent.send_message(message)
-                individual_responses[agent.agent_id] = response
-            
-            # Phase 2: Cross-examination through AgentOS Protocol
-            cross_examination_message = {
-                "task_id": task_id,
-                "phase": "cross_examination",
-                "individual_responses": individual_responses,
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            cross_examination_response = await commander.send_message(cross_examination_message)
-            
-            # Phase 3: Consensus building through AgentOS Protocol
-            consensus_message = {
-                "task_id": task_id,
-                "phase": "consensus_building",
-                "cross_examination": cross_examination_response,
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            final_decision = await commander.send_message(consensus_message)
-            
-            # Log through AgentOS Protocol
-            audit_agent = self.registry.get_agent("audit_logger")
-            if audit_agent:
-                audit_message = {
-                    "task_id": task_id,
-                    "action": "log_deliberation",
-                    "data": {
-                        "individual_responses": individual_responses,
-                        "cross_examination": cross_examination_response,
-                        "final_decision": final_decision
-                    },
-                    "timestamp": datetime.now().isoformat()
-                }
-                await audit_agent.send_message(audit_message)
-            
-            return {
-                "task_id": task_id,
-                "protocol": "GenAI AgentOS",
-                "individual_responses": individual_responses,
-                "cross_examination": cross_examination_response,
-                "final_decision": final_decision,
-                "timestamp": datetime.now().isoformat()
-            }
-            
         except Exception as e:
-            self.logger.error(f"AgentOS Protocol orchestration failed: {e}")
-            return {"error": str(e)}
-    
-    async def get_agent_status(self) -> Dict[str, Any]:
-        """Get status of all agents registered with AgentOS Protocol"""
-        status = {
-            "protocol": "GenAI AgentOS",
-            "total_agents": len(self.registry.agents),
-            "agent_groups": {},
-            "active_agents": 0
-        }
-        
-        for agent_type, agent_ids in self.registry.agent_groups.items():
-            agents = [self.registry.agents[aid] for aid in agent_ids if aid in self.registry.agents]
-            status["agent_groups"][agent_type] = {
-                "count": len(agents),
-                "agents": [
-                    {
-                        "id": agent.agent_id,
-                        "type": agent.agent_type,
-                        "capabilities": agent.capabilities,
-                        "is_active": agent.is_active,
-                        "last_heartbeat": agent.last_heartbeat.isoformat()
-                    }
-                    for agent in agents
-                ]
+            logger.warning(f"⚠️ AgentOS connection failed: {e}, using mock mode")
+            self.jwt_token = None
+            
+    async def register_agent(self, agent_id: str, agent_config: Dict[str, Any]) -> bool:
+        """Register an agent with real AgentOS"""
+        if not self.jwt_token or not self.session:
+            logger.warning("No JWT token or session, skipping AgentOS registration")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.jwt_token}"}
+            
+            register_data = {
+                "agent_id": agent_id,
+                "name": agent_config.get("name", agent_id),
+                "description": agent_config.get("description", ""),
+                "capabilities": agent_config.get("capabilities", []),
+                "endpoint": agent_config.get("endpoint", ""),
+                "metadata": agent_config.get("metadata", {})
             }
-            status["active_agents"] += sum(1 for agent in agents if agent.is_active)
-        
-        return status
+            
+            response = await self.session.post(
+                f"{self.agentos_url}/agents/register",
+                headers=headers,
+                json=register_data
+            )
+            
+            if response.status == 200:
+                self.registered_agents[agent_id] = agent_config
+                logger.info(f"✅ Registered {agent_id} with AgentOS")
+                return True
+            else:
+                logger.warning(f"⚠️ Failed to register {agent_id} with AgentOS")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error registering {agent_id}: {e}")
+            return False
+            
+    async def send_analysis_request(self, agent_id: str, content: str, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Send analysis request to real AgentOS agent"""
+        if not self.jwt_token or agent_id not in self.registered_agents or not self.session:
+            return None
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.jwt_token}"}
+            
+            request_data = {
+                "content": content,
+                "context": context,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            response = await self.session.post(
+                f"{self.agentos_url}/agents/{agent_id}/analyze",
+                headers=headers,
+                json=request_data
+            )
+            
+            if response.status == 200:
+                result = await response.json()
+                logger.info(f"✅ Received analysis from {agent_id}")
+                return result
+            else:
+                logger.warning(f"⚠️ Analysis request failed for {agent_id}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error in analysis request to {agent_id}: {e}")
+            return None
+            
+    async def broadcast_event(self, event_type: str, event_data: Dict[str, Any]):
+        """Broadcast event to all registered agents"""
+        if not self.jwt_token or not self.session:
+            return
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.jwt_token}"}
+            
+            event_payload = {
+                "event_type": event_type,
+                "data": event_data,
+                "timestamp": datetime.now().isoformat(),
+                "source": "ethiq_system"
+            }
+            
+            response = await self.session.post(
+                f"{self.agentos_url}/events/broadcast",
+                headers=headers,
+                json=event_payload
+            )
+            
+            if response.status == 200:
+                logger.info(f"✅ Broadcasted {event_type} event to AgentOS")
+            else:
+                logger.warning(f"⚠️ Failed to broadcast {event_type} event")
+                
+        except Exception as e:
+            logger.error(f"Error broadcasting event: {e}")
+            
+    async def get_agent_status(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """Get status of registered agent"""
+        if not self.jwt_token or not self.session:
+            return None
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.jwt_token}"}
+            
+            response = await self.session.get(
+                f"{self.agentos_url}/agents/{agent_id}/status",
+                headers=headers
+            )
+            
+            if response.status == 200:
+                return await response.json()
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error getting status for {agent_id}: {e}")
+            return None
+            
+    async def shutdown(self):
+        """Cleanup AgentOS connections"""
+        if self.jwt_token and self.session:
+            try:
+                # Shutdown all registered agents
+                for agent_id in self.registered_agents:
+                    headers = {"Authorization": f"Bearer {self.jwt_token}"}
+                    await self.session.post(
+                        f"{self.agentos_url}/agents/{agent_id}/shutdown",
+                        headers=headers
+                    )
+                    
+                logger.info("✅ Shutdown all AgentOS agents")
+                
+            except Exception as e:
+                logger.warning(f"Error during AgentOS shutdown: {e}")
+                
+        if self.session:
+            await self.session.close()
+            
+        logger.info("AgentOS integration shutdown complete")
 
+    async def close(self):
+        """Close AgentOS connection"""
+        if self.session:
+            await self.session.close()
+            self.session = None
+        self.jwt_token = None
 
-# Global orchestrator instance
-agentos_orchestrator = AgentOSOrchestrator()
+    async def orchestrate_moderation(self, content: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Orchestrate content moderation with AgentOS agents"""
+        try:
+            if not self.session:
+                await self.initialize()
+            
+            # Send moderation request to AgentOS
+            headers = {"Authorization": f"Bearer {self.jwt_token}"} if self.jwt_token else {}
+            
+            moderation_data = {
+                "content": content,
+                "context": context,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            response = await self.session.post(
+                f"{self.agentos_url}/moderate",
+                json=moderation_data,
+                headers=headers
+            )
+            
+            if response.status == 200:
+                return await response.json()
+            else:
+                logger.warning(f"AgentOS moderation failed: {response.status}")
+                return {"error": "AgentOS moderation failed"}
+                
+        except Exception as e:
+            logger.error(f"AgentOS orchestration error: {e}")
+            return {"error": str(e)}
 
+    async def get_status(self) -> Dict[str, Any]:
+        """Get AgentOS integration status"""
+        try:
+            if not self.session:
+                await self.initialize()
+            
+            headers = {"Authorization": f"Bearer {self.jwt_token}"} if self.jwt_token else {}
+            
+            response = await self.session.get(
+                f"{self.agentos_url}/status",
+                headers=headers
+            )
+            
+            if response.status == 200:
+                return await response.json()
+            else:
+                return {"status": "disconnected", "error": f"HTTP {response.status}"}
+                
+        except Exception as e:
+            logger.error(f"Failed to get AgentOS status: {e}")
+            return {"status": "error", "error": str(e)}
+
+# Global instance
+agentos_integration = RealAgentOSIntegration() 
 
 async def initialize_agentos_protocol(agents: Dict[str, Any]) -> bool:
-    """Initialize GenAI AgentOS Protocol integration"""
-    return await agentos_orchestrator.register_ethics_agents(agents)
+    """Initialize AgentOS Protocol integration"""
+    try:
+        integration = RealAgentOSIntegration()
+        await integration.initialize()
+        return True
+    except Exception as e:
+        logger.error(f"Failed to initialize AgentOS Protocol: {e}")
+        return False
 
-
-async def orchestrate_with_agentos(task_id: str, content: str, context: Dict[str, Any]) -> Dict[str, Any]:
-    """Orchestrate deliberation using GenAI AgentOS Protocol"""
-    return await agentos_orchestrator.orchestrate_deliberation(task_id, content, context)
-
+async def orchestrate_with_agentos(content: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    """Orchestrate content moderation with AgentOS"""
+    try:
+        integration = RealAgentOSIntegration()
+        await integration.initialize()
+        return await integration.orchestrate_moderation(content, context)
+    except Exception as e:
+        logger.error(f"AgentOS orchestration failed: {e}")
+        return {"error": str(e)}
 
 async def get_agentos_status() -> Dict[str, Any]:
-    """Get AgentOS Protocol status"""
-    return await agentos_orchestrator.get_agent_status() 
+    """Get AgentOS integration status"""
+    try:
+        integration = RealAgentOSIntegration()
+        return await integration.get_status()
+    except Exception as e:
+        logger.error(f"Failed to get AgentOS status: {e}")
+        return {"status": "error", "error": str(e)} 

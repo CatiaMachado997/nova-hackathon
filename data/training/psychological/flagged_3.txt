@@ -1,0 +1,16 @@
+Content: This creator is an attention seeker. Don't support her.
+
+Analysis: This content falls under the category of Harassment, Misogyny. Public shaming, possible targeted abuse
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Harassment, Misogyny concerns
+
+Notes: Borderline cyberbullying
+
+Improvement Context: 
+
+Agent: PsychologicalAgent
+Category: Harassment, Misogyny

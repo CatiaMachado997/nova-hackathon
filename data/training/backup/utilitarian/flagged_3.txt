@@ -1,0 +1,7 @@
+Content: "Let's dump our toxic waste in the river. The environmental regulations are too expensive and our profits matter more than some fish and downstream communities."
+
+Analysis: This content advocates for environmental destruction that would harm ecosystems and human communities. The utilitarian approach considers the long-term consequences and the well-being of all affected parties, including future generations who would suffer from environmental degradation.
+
+Decision: FLAGGED - Environmental harm with widespread consequences
+Confidence: 0.89
+Reasoning: Environmental pollution causes long-term harm to ecosystems, human health, and economic well-being that far outweighs short-term financial benefits for a single entity. 

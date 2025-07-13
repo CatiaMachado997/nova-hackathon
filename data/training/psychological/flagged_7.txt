@@ -1,0 +1,16 @@
+Content: A TikTok video claims drinking bleach cures COVID-19.
+
+Analysis: This content falls under the category of Health Misinformation. Promotes harmful and false medical advice through video.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Health Misinformation concerns
+
+Notes: Video uses engaging music and fast edits to make content appear credible.
+
+Improvement Context: 
+
+Agent: PsychologicalAgent
+Category: Health Misinformation

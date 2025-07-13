@@ -152,7 +152,7 @@ class A2AProtocol:
             for agent in self.agents.values():
                 await agent.receive_message(message)
             
-            self.logger.info(f"Broadcasted message to {len(self.agents)} agents")
+            self.logger.debug(f"Broadcasted message to {len(self.agents)} agents")
             return True
         except Exception as e:
             self.logger.error(f"Failed to broadcast message: {e}")

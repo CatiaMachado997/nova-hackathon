@@ -1,0 +1,16 @@
+Content: Short Instagram Reel where an influencer promotes crypto with 'guaranteed 200% returns'.
+
+Analysis: This content falls under the category of Financial Misinformation. Misleading financial advice targeting naive investors.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Financial Misinformation concerns
+
+Notes: Comments turned off, suggesting avoidance of scrutiny.
+
+Improvement Context: 
+
+Agent: UtilitarianAgent
+Category: Financial Misinformation

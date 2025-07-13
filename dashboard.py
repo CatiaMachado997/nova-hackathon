@@ -179,8 +179,39 @@ def submit_moderation():
 
 @app.route('/api/system_status')
 def get_system_status():
-    """Get system status"""
-    return jsonify(fetch_system_status())
+    """Get current system status"""
+    try:
+        # Get agent status
+        response = requests.get(f"{API_BASE_URL}/api/agents")
+        if response.status_code == 200:
+            agent_data = response.json()
+            
+            # Extract commander and specialist agents
+            commander = agent_data.get("commander", {})
+            specialist_agents = agent_data.get("debate_agents", {})  # API still uses debate_agents field
+            
+            return {
+                "commander": {
+                    "name": commander.get("name", "EthicsCommander"),
+                    "description": commander.get("description", "Master agent that orchestrates ethical deliberation"),
+                    "ethical_framework": commander.get("ethical_framework", "Multi-Framework Orchestration & Synthesis"),
+                    "is_active": commander.get("is_active", True),
+                    "queue_size": commander.get("queue_size", 0),
+                    "response_count": commander.get("response_count", 0)
+                },
+                "specialist_agents": {
+                    "utilitarian": specialist_agents.get("utilitarian", {}),
+                    "deontological": specialist_agents.get("deontological", {}),
+                    "cultural_context": specialist_agents.get("cultural_context", {}),
+                    "free_speech": specialist_agents.get("free_speech", {})
+                },
+                "total_agents": agent_data.get("total_agents", 5),
+                "active_agents": agent_data.get("active_agents", 5),
+                "system_health": agent_data.get("system_health", "healthy")
+            }
+    except Exception as e:
+        print(f"Error getting system status: {e}")
+        return None
 
 @app.route('/api/moderation_history')
 def get_moderation_history():

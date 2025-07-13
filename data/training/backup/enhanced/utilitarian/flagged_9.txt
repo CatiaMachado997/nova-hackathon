@@ -1,0 +1,16 @@
+Content: A deepfake meme showing a celebrity spreading anti-vaccine views.
+
+Analysis: This content falls under the category of AI Deepfake / Health Misinformation. Encourages vaccine hesitancy using fabricated authority.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to AI Deepfake / Health Misinformation concerns
+
+Notes: Cross-domain issue: misinformation, health risk, celebrity trust misuse.
+
+Improvement Context: 
+
+Agent: UtilitarianAgent
+Category: AI Deepfake / Health Misinformation

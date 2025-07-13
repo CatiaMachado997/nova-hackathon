@@ -1,0 +1,24 @@
+agent:
+  capabilities:
+  - moral_duty
+  - rights_analysis
+  - rule_based_reasoning
+  description: Agent applying deontological (duty-based) ethical reasoning
+  ethical_framework: Deontological Ethics
+  name: DeontologicalAgent
+  tools:
+  - training_data_loader
+  - llm_integration
+  type: ethical
+dependencies:
+- openai
+- pydantic
+llm:
+  config:
+    max_tokens: 512
+    temperature: 0.2
+  model: gpt-3.5-turbo
+  provider: openai
+training:
+  data_path: data/training/deontological
+  examples_count: 10

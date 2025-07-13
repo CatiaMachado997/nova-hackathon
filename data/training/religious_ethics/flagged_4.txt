@@ -1,0 +1,16 @@
+Content: Satirical cartoon of a religious figure involved in a political scandal.
+
+Analysis: This content falls under the category of Satire / Cultural Humor. Potential offense to religious groups and cultural sensitivities.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Satire / Cultural Humor concerns
+
+Notes: This requires cultural and religious sensitivity awareness.
+
+Improvement Context: 
+
+Agent: ReligiousEthicsAgent
+Category: Satire / Cultural Humor

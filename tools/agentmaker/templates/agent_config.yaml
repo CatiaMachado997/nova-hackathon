@@ -1,0 +1,24 @@
+# Agent Configuration
+agent:
+  name: "{{AGENT_NAME}}"
+  description: "{{AGENT_DESCRIPTION}}"
+  type: "{{AGENT_TYPE}}"
+  ethical_framework: "{{ETHICAL_FRAMEWORK}}"
+  capabilities: {{CAPABILITIES}}
+  tools: {{TOOLS}}
+
+llm:
+  provider: "{{LLM_PROVIDER}}"
+  model: "{{MODEL}}"
+  config:
+    temperature: 0.2
+    max_tokens: 512
+
+training:
+  data_path: "data/training/{{AGENT_NAME.lower()}}"
+  examples_count: 10
+
+dependencies:
+  - pydantic>=2.0.0
+  - asyncio
+  - logging

@@ -1,0 +1,16 @@
+Content: A meme mocking mental health struggles using dark humor captions.
+
+Analysis: This content falls under the category of Mental Health Stigma. Can reinforce stigma and trivialize psychological issues.
+
+Decision: FLAGGED
+
+Confidence: 0.8
+
+Reasoning: Content flagged due to Mental Health Stigma concerns
+
+Notes: Popular on meme pages targeting teenagers.
+
+Improvement Context: 
+
+Agent: PsychologicalAgent
+Category: Mental Health Stigma

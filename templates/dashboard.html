@@ -6,6 +6,7 @@
     <title>EthIQ - Ethical Intelligence Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
 </head>
 <body>
@@ -234,10 +235,117 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row" id="agent-status-grid">
-                            <div class="col-12 text-center">
-                                <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
-                                <p class="text-muted">Loading agent status...</p>
+                        <div class="agents-grid">
+                            <!-- Commander Agent -->
+                            <div class="agent-card commander">
+                                <div class="agent-header">
+                                    <h3 id="commander-name">EthicsCommander</h3>
+                                    <span class="status-badge" id="commander-status">Active</span>
+                                </div>
+                                <p id="commander-description">Master agent that orchestrates ethical deliberation among 4 specialist agents and performs final synthesis & judgment</p>
+                                <div class="agent-metrics">
+                                    <div class="metric">
+                                        <span class="metric-label">Framework:</span>
+                                        <span id="commander-framework">Multi-Framework Orchestration & Synthesis</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Queue:</span>
+                                        <span id="commander-queue">0</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Responses:</span>
+                                        <span id="commander-responses">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Specialist Agents -->
+                            <div class="agent-card">
+                                <div class="agent-header">
+                                    <h3 id="utilitarian-name">UtilitarianAgent</h3>
+                                    <span class="status-badge" id="utilitarian-status">Active</span>
+                                </div>
+                                <p id="utilitarian-description">Agent applying utilitarian ethical reasoning (maximizing overall good)</p>
+                                <div class="agent-metrics">
+                                    <div class="metric">
+                                        <span class="metric-label">Framework:</span>
+                                        <span id="utilitarian-framework">Utilitarianism</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Queue:</span>
+                                        <span id="utilitarian-queue">0</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Responses:</span>
+                                        <span id="utilitarian-responses">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="agent-card">
+                                <div class="agent-header">
+                                    <h3 id="deontological-name">DeontologicalAgent</h3>
+                                    <span class="status-badge" id="deontological-status">Active</span>
+                                </div>
+                                <p id="deontological-description">Agent applying deontological (duty-based) ethical reasoning</p>
+                                <div class="agent-metrics">
+                                    <div class="metric">
+                                        <span class="metric-label">Framework:</span>
+                                        <span id="deontological-framework">Deontological Ethics</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Queue:</span>
+                                        <span id="deontological-queue">0</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Responses:</span>
+                                        <span id="deontological-responses">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="agent-card">
+                                <div class="agent-header">
+                                    <h3 id="cultural-name">CulturalContextAgent</h3>
+                                    <span class="status-badge" id="cultural-status">Active</span>
+                                </div>
+                                <p id="cultural-description">Agent considering cultural context and norms in ethical reasoning</p>
+                                <div class="agent-metrics">
+                                    <div class="metric">
+                                        <span class="metric-label">Framework:</span>
+                                        <span id="cultural-framework">Cultural Context Ethics</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Queue:</span>
+                                        <span id="cultural-queue">0</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Responses:</span>
+                                        <span id="cultural-responses">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="agent-card">
+                                <div class="agent-header">
+                                    <h3 id="free-speech-name">FreeSpeechAgent</h3>
+                                    <span class="status-badge" id="free-speech-status">Active</span>
+                                </div>
+                                <p id="free-speech-description">Agent prioritizing free speech and expression in ethical reasoning</p>
+                                <div class="agent-metrics">
+                                    <div class="metric">
+                                        <span class="metric-label">Framework:</span>
+                                        <span id="free-speech-framework">Free Speech Ethics</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Queue:</span>
+                                        <span id="free-speech-queue">0</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Responses:</span>
+                                        <span id="free-speech-responses">0</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

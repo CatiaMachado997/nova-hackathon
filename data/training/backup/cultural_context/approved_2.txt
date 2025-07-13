@@ -1,0 +1,7 @@
+Content: "We should provide prayer rooms and accommodate different dietary restrictions in our workplace to respect diverse cultural and religious practices."
+
+Analysis: This content demonstrates cultural sensitivity and accommodation. The cultural context perspective recognizes that different cultures have varying religious and dietary practices that should be respected and accommodated in shared spaces.
+
+Decision: APPROVED - Cultural accommodation and respect
+Confidence: 0.90
+Reasoning: Providing accommodations for diverse cultural and religious practices shows respect for cultural differences and promotes an inclusive environment. 

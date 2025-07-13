@@ -103,7 +103,7 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down EthIQ system...")
     if ethics_commander:
-        await ethics_commander.shutdown_all_agents()
+        await ethics_commander.shutdown()
     logger.info("System shutdown complete")
 
 
@@ -163,8 +163,8 @@ async def health_check():
     
     if ethics_commander:
         status = await ethics_commander.get_agent_status()
-        total_agents = 1 + len(status.get("debate_agents", {}))
-        agents_healthy = sum(1 for agent in status.get("debate_agents", {}).values() 
+        total_agents = 1 + len(status.get("specialist_agents", {}))
+        agents_healthy = sum(1 for agent in status.get("specialist_agents", {}).values() 
                            if agent.get("is_active", False))
         if status.get("commander", {}).get("is_active", False):
             agents_healthy += 1
@@ -214,49 +214,55 @@ async def moderate_content(
         
         processing_time = time.time() - start_time
         
-        # Get deliberation history for detailed response
-        deliberation_history = commander.get_deliberation_history()
-        latest_deliberation = deliberation_history[-1] if deliberation_history else {}
-        
         # Extract individual responses
         individual_responses = {}
-        if "individual_responses" in latest_deliberation:
-            for agent_name, agent_response in latest_deliberation["individual_responses"].items():
-                individual_responses[agent_name] = AgentResponse(
-                    agent_name=agent_response.agent_name,
-                    ethical_framework=agent_response.ethical_framework,
-                    decision=agent_response.decision,
-                    confidence=agent_response.confidence,
-                    reasoning=agent_response.reasoning,
-                    supporting_evidence=agent_response.supporting_evidence,
-                    timestamp=agent_response.timestamp
-                )
+        latest_deliberation = ethics_commander.deliberation_history[-1] if ethics_commander.deliberation_history else {}
         
-        # Extract cross-examination results
-        cross_examination = CrossExaminationResult(
-            conflicts=latest_deliberation.get("cross_examination", {}).get("conflicts", []),
-            agreements=latest_deliberation.get("cross_examination", {}).get("agreements", []),
-            questions=latest_deliberation.get("cross_examination", {}).get("questions", []),
-            clarifications=latest_deliberation.get("cross_examination", {}).get("clarifications", [])
-        )
+        for agent_name, agent_response in latest_deliberation.get("specialist_responses", {}).items():
+            individual_responses[agent_name] = AgentResponse(
+                agent_name=agent_response.agent_name,
+                ethical_framework=agent_response.ethical_framework,
+                decision=agent_response.decision,
+                confidence=agent_response.confidence,
+                reasoning=agent_response.reasoning,
+                supporting_evidence=agent_response.supporting_evidence,
+                timestamp=agent_response.timestamp
+            )
         
-        # Extract consensus results
-        consensus_data = latest_deliberation.get("consensus", {})
-        consensus = ConsensusResult(
-            decision=consensus_data.get("decision", response.decision),
-            confidence=consensus_data.get("confidence", response.confidence),
-            reasoning=consensus_data.get("reasoning", response.reasoning),
-            evidence=consensus_data.get("evidence", response.supporting_evidence),
-            individual_contributions=consensus_data.get("individual_contributions", {}),
-            cross_examination_results=cross_examination
+        # Convert specialist_opinions list to individual_contributions dict
+        individual_contributions = {}
+        synthesis_data = latest_deliberation.get("final_decision", {})
+        specialist_opinions = synthesis_data.get("specialist_opinions", [])
+        
+        for opinion in specialist_opinions:
+            agent_name = opinion.get("agent", "unknown")
+            individual_contributions[agent_name] = {
+                "decision": opinion.get("decision", "UNKNOWN"),
+                "confidence": opinion.get("confidence", 0.0),
+                "framework": opinion.get("framework", "Unknown")
+            }
+        
+        synthesis = ConsensusResult(
+            decision=synthesis_data.get("final_decision", response.decision),
+            confidence=synthesis_data.get("confidence", response.confidence),
+            reasoning=synthesis_data.get("reasoning", response.reasoning),
+            evidence=synthesis_data.get("evidence", response.supporting_evidence),
+            individual_contributions=individual_contributions,
+            cross_examination_results=CrossExaminationResult(
+                conflicts=[],
+                agreements=[],
+                questions=[],
+                clarifications=[]
+            )
         )
         
         # Create deliberation summary
+        consensus_analysis = synthesis_data.get("consensus_analysis", {})
         deliberation_summary = DeliberationSummary(
             agents_consulted=len(individual_responses),
-            consensus_reached=consensus_data.get("confidence", 0) > 0.6,
-            conflicts_resolved=len(cross_examination.conflicts),
-            deliberation_quality="high" if consensus_data.get("confidence", 0) > 0.8 else "medium"
+            consensus_reached=consensus_analysis.get("consensus_count", 0) >= consensus_analysis.get("total_agents", 0) * 0.5,
+            conflicts_resolved=0,  # Simplified model doesn't track conflicts
+            deliberation_quality="high" if synthesis_data.get("confidence", 0) > 0.8 else "medium"
         )
         
         # Create response
@@ -268,8 +274,13 @@ async def moderate_content(
             evidence=response.supporting_evidence,
             deliberation_summary=deliberation_summary,
             individual_responses=individual_responses,
-            cross_examination=cross_examination,
-            consensus=consensus,
+            cross_examination=CrossExaminationResult(
+                conflicts=[],
+                agreements=[],
+                questions=[],
+                clarifications=[]
+            ),
+            consensus=synthesis,
             processing_time=processing_time,
             timestamp=datetime.now()
         )
@@ -360,9 +371,9 @@ async def get_agents_status(commander: EthicsCommander = Depends(get_ethics_comm
         response_count=status["commander"]["response_count"]
     )
     
-    debate_agents = {}
-    for name, agent_status in status["debate_agents"].items():
-        debate_agents[name] = AgentStatus(
+    specialist_agents = {}
+    for name, agent_status in status["specialist_agents"].items():
+        specialist_agents[name] = AgentStatus(
             name=agent_status["name"],
             description=agent_status["description"],
             ethical_framework=agent_status["ethical_framework"],
@@ -371,8 +382,8 @@ async def get_agents_status(commander: EthicsCommander = Depends(get_ethics_comm
             response_count=agent_status["response_count"]
         )
     
-    total_agents = 1 + len(debate_agents)
-    active_agents = sum(1 for agent in debate_agents.values() if agent.is_active)
+    total_agents = 1 + len(specialist_agents)
+    active_agents = sum(1 for agent in specialist_agents.values() if agent.is_active)
     if commander_status.is_active:
         active_agents += 1
     
@@ -380,7 +391,7 @@ async def get_agents_status(commander: EthicsCommander = Depends(get_ethics_comm
     
     return SystemStatus(
         commander=commander_status,
-        debate_agents=debate_agents,
+        debate_agents=specialist_agents,  # Keep field name for API compatibility
         total_agents=total_agents,
         active_agents=active_agents,
         system_health=system_health
