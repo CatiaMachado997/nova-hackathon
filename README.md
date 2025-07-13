@@ -11,12 +11,11 @@ EthIQ is a sophisticated ethical AI moderation platform that employs a 5-agent a
 
 ## 🚀 Key Features
 
-### 🤖 Multi-Agent Architecture
-- **EthicsCommander**: Master coordinator orchestrating deliberation
-- **UtilitarianAgent**: Maximizes overall good and happiness
-- **DeontologicalAgent**: Duty-based ethical reasoning
-- **CulturalContextAgent**: Cultural sensitivity and context awareness
-- **FreeSpeechAgent**: Free speech and expression protection
+- **EthicsCommander** (Master/Orchestrator): Orchestrates the workflow, dispatches cases to the four specialist agents, and synthesizes their responses into a final decision.
+- **UtilitarianAgent**: Maximizes overall good and happiness.
+- **DeontologicalAgent**: Duty-based ethical reasoning.
+- **CulturalContextAgent**: Cultural sensitivity and context awareness.
+- **FreeSpeechAgent**: Free speech and expression protection.
 
 ### 🔧 Advanced Capabilities
 - **Health Misinformation Detection**: Advanced pattern recognition for medical content
@@ -150,10 +149,6 @@ data/training/
 ├── deontological/        # 6 examples  
 ├── cultural_context/     # 9 examples
 ├── free_speech/          # 8 examples
-├── psychological/        # 11 examples
-├── religious_ethics/     # 4 examples
-├── financial_impact/     # 5 examples
-└── temporal/            # Time-sensitive content
 ```
 
 ## 🔧 Error Handling

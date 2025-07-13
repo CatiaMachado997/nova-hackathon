@@ -3,230 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EthIQ - Ethical Intelligence Dashboard</title>
+    <title>EthIQ - Ethical AI Moderation Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+    <style>
+        .agent-card {
+            transition: transform 0.2s;
+        }
+        .agent-card:hover {
+            transform: translateY(-2px);
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+    </style>
 </head>
-<body>
-    <!-- Navigation -->
+<body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-balance-scale me-2"></i>
-                EthIQ
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-brain me-2"></i>
+                EthIQ - Ethical AI Moderation
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/">
-                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/moderate">
-                            <i class="fas fa-shield-alt me-1"></i>Moderate
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/agents">
-                            <i class="fas fa-robot me-1"></i>Agents
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/analytics">
-                            <i class="fas fa-chart-bar me-1"></i>Analytics
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/history">
-                            <i class="fas fa-history me-1"></i>History
-                        </a>
-                    </li>
-                </ul>
-                <div class="navbar-nav">
-                    <span class="navbar-text">
-                        <i class="fas fa-circle text-success me-1" id="status-indicator"></i>
-                        <span id="system-status">Connecting...</span>
-                    </span>
-                </div>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    Status: <span id="connection-status" class="badge bg-success">Connected</span>
+                </span>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
     <div class="container-fluid mt-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1 class="display-4 text-center">
-                    <i class="fas fa-balance-scale text-primary me-3"></i>
-                    EthIQ Ethical Intelligence
-                </h1>
-                <p class="lead text-center text-muted">
-                    AI-powered ethical content moderation through multi-agent deliberation
-                </p>
-            </div>
-        </div>
-
-        <!-- Quick Stats -->
+        <!-- System Overview -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="card-title" id="total-decisions">0</h4>
-                                <p class="card-text">Total Decisions</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-gavel fa-2x"></i>
-                            </div>
-                        </div>
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <div class="metric-value" id="total-agents">5</div>
+                        <div class="metric-label">Total Agents</div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="card-title" id="active-agents">0</h4>
-                                <p class="card-text">Active Agents</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-robot fa-2x"></i>
-                            </div>
-                        </div>
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <div class="metric-value" id="active-agents">5</div>
+                        <div class="metric-label">Active Agents</div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="card-title" id="avg-confidence">0%</h4>
-                                <p class="card-text">Avg Confidence</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-chart-line fa-2x"></i>
-                            </div>
-                        </div>
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <div class="metric-value" id="system-health">Healthy</div>
+                        <div class="metric-label">System Health</div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="card-title" id="consensus-rate">0%</h4>
-                                <p class="card-text">Consensus Rate</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-handshake fa-2x"></i>
-                            </div>
-                        </div>
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <h4 class="card-title" id="consensus-rate">100%</h4>
+                        <p class="card-text">Consensus Rate</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Main Dashboard Content -->
+        <!-- Main Content -->
         <div class="row">
-            <!-- Quick Moderation -->
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-shield-alt me-2"></i>
-                            Quick Content Moderation
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="quick-moderation-form">
-                            <div class="mb-3">
-                                <label for="content-input" class="form-label">Content to Moderate</label>
-                                <textarea class="form-control" id="content-input" rows="4" 
-                                          placeholder="Enter content for ethical analysis..."></textarea>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="content-type" class="form-label">Content Type</label>
-                                        <select class="form-select" id="content-type">
-                                            <option value="text">Text</option>
-                                            <option value="video">Video</option>
-                                            <option value="image">Image</option>
-                                            <option value="audio">Audio</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="audience-size" class="form-label">Audience Size</label>
-                                        <input type="number" class="form-control" id="audience-size" value="1000" min="1">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="vulnerable-audience">
-                                    <label class="form-check-label" for="vulnerable-audience">
-                                        Vulnerable Audience
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="educational-value">
-                                    <label class="form-check-label" for="educational-value">
-                                        Educational Value
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="public-interest">
-                                    <label class="form-check-label" for="public-interest">
-                                        Public Interest
-                                    </label>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary" id="submit-moderation">
-                                <i class="fas fa-play me-2"></i>
-                                Start Ethical Analysis
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-clock me-2"></i>
-                            Recent Activity
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="recent-activity" class="activity-feed">
-                            <div class="text-center text-muted">
-                                <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
-                                <p>Loading recent activity...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Agent Status -->
-        <div class="row mt-4">
-            <div class="col-12">
+            <!-- Agent Status -->
+            <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
@@ -235,115 +98,123 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="agents-grid">
-                            <!-- Commander Agent -->
-                            <div class="agent-card commander">
-                                <div class="agent-header">
-                                    <h3 id="commander-name">EthicsCommander</h3>
-                                    <span class="status-badge" id="commander-status">Active</span>
-                                </div>
-                                <p id="commander-description">Master agent that orchestrates ethical deliberation among 4 specialist agents and performs final synthesis & judgment</p>
-                                <div class="agent-metrics">
-                                    <div class="metric">
-                                        <span class="metric-label">Framework:</span>
-                                        <span id="commander-framework">Multi-Framework Orchestration & Synthesis</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Queue:</span>
-                                        <span id="commander-queue">0</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Responses:</span>
-                                        <span id="commander-responses">0</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Specialist Agents -->
-                            <div class="agent-card">
-                                <div class="agent-header">
-                                    <h3 id="utilitarian-name">UtilitarianAgent</h3>
-                                    <span class="status-badge" id="utilitarian-status">Active</span>
-                                </div>
-                                <p id="utilitarian-description">Agent applying utilitarian ethical reasoning (maximizing overall good)</p>
-                                <div class="agent-metrics">
-                                    <div class="metric">
-                                        <span class="metric-label">Framework:</span>
-                                        <span id="utilitarian-framework">Utilitarianism</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Queue:</span>
-                                        <span id="utilitarian-queue">0</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Responses:</span>
-                                        <span id="utilitarian-responses">0</span>
+                        <div class="row">
+                            <!-- EthicsCommander -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card agent-card h-100" id="agent-commander">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title agent-name">EthicsCommander</h6>
+                                                <p class="card-text small">Master agent orchestrating ethical deliberation</p>
+                                                <p class="card-text small"><strong>Framework:</strong> <span class="agent-framework">Multi-Framework Orchestration</span></p>
+                                            </div>
+                                            <span class="agent-status badge bg-success">Active</span>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">Responses: <span class="agent-responses">0</span></small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Queue: <span class="agent-queue">0</span></small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="agent-card">
-                                <div class="agent-header">
-                                    <h3 id="deontological-name">DeontologicalAgent</h3>
-                                    <span class="status-badge" id="deontological-status">Active</span>
-                                </div>
-                                <p id="deontological-description">Agent applying deontological (duty-based) ethical reasoning</p>
-                                <div class="agent-metrics">
-                                    <div class="metric">
-                                        <span class="metric-label">Framework:</span>
-                                        <span id="deontological-framework">Deontological Ethics</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Queue:</span>
-                                        <span id="deontological-queue">0</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Responses:</span>
-                                        <span id="deontological-responses">0</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="agent-card">
-                                <div class="agent-header">
-                                    <h3 id="cultural-name">CulturalContextAgent</h3>
-                                    <span class="status-badge" id="cultural-status">Active</span>
-                                </div>
-                                <p id="cultural-description">Agent considering cultural context and norms in ethical reasoning</p>
-                                <div class="agent-metrics">
-                                    <div class="metric">
-                                        <span class="metric-label">Framework:</span>
-                                        <span id="cultural-framework">Cultural Context Ethics</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Queue:</span>
-                                        <span id="cultural-queue">0</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Responses:</span>
-                                        <span id="cultural-responses">0</span>
+                            <!-- UtilitarianAgent -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card agent-card h-100" id="agent-utilitarian">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title agent-name">UtilitarianAgent</h6>
+                                                <p class="card-text small">Maximizes overall good and happiness</p>
+                                                <p class="card-text small"><strong>Framework:</strong> <span class="agent-framework">Utilitarianism</span></p>
+                                            </div>
+                                            <span class="agent-status badge bg-success">Active</span>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">Responses: <span class="agent-responses">0</span></small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Queue: <span class="agent-queue">0</span></small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="agent-card">
-                                <div class="agent-header">
-                                    <h3 id="free-speech-name">FreeSpeechAgent</h3>
-                                    <span class="status-badge" id="free-speech-status">Active</span>
+                            <!-- DeontologicalAgent -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card agent-card h-100" id="agent-deontological">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title agent-name">DeontologicalAgent</h6>
+                                                <p class="card-text small">Duty-based ethical reasoning</p>
+                                                <p class="card-text small"><strong>Framework:</strong> <span class="agent-framework">Deontological Ethics</span></p>
+                                            </div>
+                                            <span class="agent-status badge bg-success">Active</span>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">Responses: <span class="agent-responses">0</span></small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Queue: <span class="agent-queue">0</span></small>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p id="free-speech-description">Agent prioritizing free speech and expression in ethical reasoning</p>
-                                <div class="agent-metrics">
-                                    <div class="metric">
-                                        <span class="metric-label">Framework:</span>
-                                        <span id="free-speech-framework">Free Speech Ethics</span>
+                            </div>
+
+                            <!-- CulturalContextAgent -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card agent-card h-100" id="agent-cultural_context">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title agent-name">CulturalContextAgent</h6>
+                                                <p class="card-text small">Cultural sensitivity and context awareness</p>
+                                                <p class="card-text small"><strong>Framework:</strong> <span class="agent-framework">Cultural Context Ethics</span></p>
+                                            </div>
+                                            <span class="agent-status badge bg-success">Active</span>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">Responses: <span class="agent-responses">0</span></small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Queue: <span class="agent-queue">0</span></small>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Queue:</span>
-                                        <span id="free-speech-queue">0</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Responses:</span>
-                                        <span id="free-speech-responses">0</span>
+                                </div>
+                            </div>
+
+                            <!-- FreeSpeechAgent -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card agent-card h-100" id="agent-free_speech">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title agent-name">FreeSpeechAgent</h6>
+                                                <p class="card-text small">Free speech and expression protection</p>
+                                                <p class="card-text small"><strong>Framework:</strong> <span class="agent-framework">Free Speech Ethics</span></p>
+                                            </div>
+                                            <span class="agent-status badge bg-success">Active</span>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">Responses: <span class="agent-responses">0</span></small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Queue: <span class="agent-queue">0</span></small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -351,33 +222,91 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Moderation Result Modal -->
-    <div class="modal fade" id="moderationResultModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-balance-scale me-2"></i>
-                        Ethical Analysis Result
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <!-- Analytics & Controls -->
+            <div class="col-md-4">
+                <!-- Analytics -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Analytics
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Total Decisions</label>
+                            <div class="h4" id="total-decisions">0</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Decision Distribution</label>
+                            <div class="d-flex justify-content-between">
+                                <span>Allow: <span id="decision-allow">0</span></span>
+                                <span>Remove: <span id="decision-remove">0</span></span>
+                                <span>Review: <span id="decision-flag_for_review">0</span></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Average Confidence</label>
+                            <div class="h4" id="avg-confidence">0%</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-body" id="moderation-result-content">
-                    <!-- Content will be populated by JavaScript -->
+
+                <!-- Test Moderation -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-test-tube me-2"></i>
+                            Test Moderation
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="test-content" class="form-label">Content to Test</label>
+                            <textarea class="form-control" id="test-content" rows="3" placeholder="Enter content to moderate..."></textarea>
+                        </div>
+                        <button class="btn btn-primary w-100" id="test-moderation">
+                            <i class="fas fa-play me-2"></i>
+                            Test Moderation
+                        </button>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+                <!-- Controls -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-cogs me-2"></i>
+                            Controls
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-outline-secondary w-100 mb-2" id="refresh-data">
+                            <i class="fas fa-sync-alt me-2"></i>
+                            Refresh Data
+                        </button>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="auto-refresh" checked>
+                            <label class="form-check-label" for="auto-refresh">
+                                Auto Refresh
+                            </label>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Moderation Result -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div id="moderation-result"></div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="/static/js/dashboard.js"></script>
 </body>
 </html> 

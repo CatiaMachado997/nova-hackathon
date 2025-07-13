@@ -2,24 +2,40 @@
 
 ## Overview
 
-EthIQ is a comprehensive ethical AI moderation system that integrates with Cloudera AI Workbench and Notion for real-time content moderation using multi-agent ethical deliberation. The system employs a sophisticated 5-agent architecture with specialist agents and a master coordinator.
+EthIQ is a comprehensive ethical AI moderation system that integrates with Cloudera AI Workbench and Notion for real-time content moderation using multi-agent ethical deliberation. The system now uses a streamlined 5-agent architecture:
 
 ## System Architecture
 
 ### Core Components
 
-1. **EthicsCommander** - Master agent orchestrating ethical deliberation
+1. **EthicsCommander** - Master agent orchestrating ethical deliberation and making the final decision
 2. **UtilitarianAgent** - Maximizes overall good and happiness
 3. **DeontologicalAgent** - Duty-based ethical reasoning
 4. **CulturalContextAgent** - Cultural sensitivity and context awareness
 5. **FreeSpeechAgent** - Free speech and expression protection
 
+### Workflow
+
+- **Input:** User submits a case to the Master Agent (EthicsCommander).
+- **Dispatch:** The Master Agent sends the case to the four specialist agents in parallel.
+- **Analysis:** Each specialist agent returns a structured, perspective-specific analysis.
+- **Synthesis:** The Master Agent reviews all four analyses and generates a single, final recommendation with justification.
+- **Output:** The final decision and justification are logged and presented to the user.
+
 ### Integration Layer
 
-- **GenAI AgentOS Protocol** - Real agent integration with JWT authentication
-- **Cloudera AI Workbench** - Event streaming and analytics
-- **Notion Integration** - Audit logging and documentation
-- **Hybrid A2A/MCP System** - Agent-to-agent communication protocol
+- **GenAI AgentOS Protocol** - Real agent integration for registration, async HTTP sessions, and JWT authentication.
+- **Cloudera Integration** - For event streaming and analytics.
+- **Notion Integration** - For audit logging and documentation.
+
+## Agents (Only These Remain)
+- UtilitarianAgent
+- DeontologicalAgent
+- CulturalContextAgent
+- FreeSpeechAgent
+- EthicsCommander (Master/Orchestrator)
+
+All other agents and legacy consensus logic have been removed for clarity and maintainability.
 
 ## Recent System Improvements
 
@@ -137,10 +153,6 @@ data/training/
 ├── deontological/        # 6 examples  
 ├── cultural_context/     # 9 examples
 ├── free_speech/          # 8 examples
-├── psychological/        # 11 examples
-├── religious_ethics/     # 4 examples
-├── financial_impact/     # 5 examples
-└── temporal/            # Time-sensitive content
 ```
 
 ## Error Handling and Recovery

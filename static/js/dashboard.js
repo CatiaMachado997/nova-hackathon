@@ -1,542 +1,385 @@
-// EthIQ Dashboard JavaScript
+// Dashboard JavaScript for EthIQ Ethical Deliberation System
 
-// Global variables
-let socket;
-let systemStatus = {};
-let moderationHistory = [];
-let analyticsData = {};
-
-// Add at the top of the file (after global variables)
-let moderationResultModalInstance = null;
+let socket = null;
+let updateInterval = null;
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
     initializeSocket();
     initializeEventListeners();
-    loadInitialData();
+    startPeriodicUpdates();
 });
 
-// Initialize WebSocket connection
+// Socket.IO connection
 function initializeSocket() {
     socket = io();
     
     socket.on('connect', function() {
-        console.log('Connected to server');
-        updateSystemStatus('Connected', 'connected');
+        console.log('Connected to EthIQ dashboard');
+        updateConnectionStatus(true);
     });
     
     socket.on('disconnect', function() {
-        console.log('Disconnected from server');
-        updateSystemStatus('Disconnected', 'disconnected');
-    });
-    
-    socket.on('connected', function(data) {
-        console.log('Dashboard connected:', data);
+        console.log('Disconnected from EthIQ dashboard');
+        updateConnectionStatus(false);
     });
     
     socket.on('system_status_update', function(data) {
-        systemStatus = data;
-        updateDashboardStats(data);
-        updateAgentStatusGrid(data);
-    });
-    
-    socket.on('history_update', function(data) {
-        moderationHistory = data;
-        updateRecentActivity(data);
+        updateSystemStatus(data);
     });
     
     socket.on('analytics_update', function(data) {
-        analyticsData = data;
-        updateDashboardStats(data);
+        updateAnalytics(data);
     });
     
-    socket.on('moderation_result', function(data) {
-        showModerationResult(data);
-    });
-    
-    socket.on('moderation_error', function(data) {
-        showError(data.error);
+    socket.on('deliberation_update', function(data) {
+        updateDeliberationStatus(data);
     });
 }
 
-// Initialize event listeners
+// Event listeners
 function initializeEventListeners() {
-    // Quick moderation form
-    const form = document.getElementById('quick-moderation-form');
-    if (form) {
-        form.addEventListener('submit', handleModerationSubmit);
+    // Test moderation button
+    const testButton = document.getElementById('test-moderation');
+    if (testButton) {
+        testButton.addEventListener('click', testModeration);
     }
     
-    // Real-time moderation via socket
-    socket.on('request_moderation', function(data) {
-        handleModerationRequest(data);
-    });
+    // Refresh button
+    const refreshButton = document.getElementById('refresh-data');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', refreshData);
+    }
+    
+    // Settings form
+    const settingsForm = document.getElementById('settings-form');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', saveSettings);
+    }
 }
 
-// Load initial data
-function loadInitialData() {
-    // Load system status
-    fetch('/api/system_status')
-        .then(response => response.json())
-        .then(data => {
-            systemStatus = data;
-            updateDashboardStats(data);
-            updateAgentStatusGrid(data);
-        })
-        .catch(error => {
-            console.error('Error loading system status:', error);
-            updateSystemStatus('Error', 'disconnected');
-        });
-    
-    // Load moderation history
-    fetch('/api/moderation_history')
-        .then(response => response.json())
-        .then(data => {
-            moderationHistory = data;
-            updateRecentActivity(data);
-        })
-        .catch(error => {
-            console.error('Error loading moderation history:', error);
-        });
-    
-    // Load analytics
-    fetch('/api/analytics')
-        .then(response => response.json())
-        .then(data => {
-            analyticsData = data;
-            updateDashboardStats(data);
-        })
-        .catch(error => {
-            console.error('Error loading analytics:', error);
-        });
+// Update connection status
+function updateConnectionStatus(connected) {
+    const statusElement = document.getElementById('connection-status');
+    if (statusElement) {
+        statusElement.textContent = connected ? 'Connected' : 'Disconnected';
+        statusElement.className = connected ? 'badge bg-success' : 'badge bg-danger';
+    }
 }
 
-// Handle moderation form submission
-function handleModerationSubmit(event) {
+// Update system status
+function updateSystemStatus(data) {
+    // Update commander status
+    if (data.commander) {
+        updateAgentStatus('commander', data.commander);
+    }
+    
+    // Update specialist agents
+    if (data.debate_agents) {
+        Object.keys(data.debate_agents).forEach(agentKey => {
+            updateAgentStatus(agentKey, data.debate_agents[agentKey]);
+        });
+    }
+    
+    // Update system health
+    const healthElement = document.getElementById('system-health');
+    if (healthElement) {
+        healthElement.textContent = data.system_health || 'Unknown';
+        healthElement.className = `badge ${getHealthBadgeClass(data.system_health)}`;
+    }
+    
+    // Update total agents
+    const totalAgentsElement = document.getElementById('total-agents');
+    if (totalAgentsElement) {
+        totalAgentsElement.textContent = data.total_agents || 0;
+    }
+    
+    // Update active agents
+    const activeAgentsElement = document.getElementById('active-agents');
+    if (activeAgentsElement) {
+        activeAgentsElement.textContent = data.active_agents || 0;
+    }
+    
+    // Update consensus rate
+    const consensusRate = data.total_agents > 0 ? Math.round((data.active_agents / data.total_agents) * 100) : 0;
+    document.getElementById('consensus-rate').textContent = `${consensusRate}%`;
+}
+
+// Update agent status
+function updateAgentStatus(agentKey, agentData) {
+    const agentElement = document.getElementById(`agent-${agentKey}`);
+    if (!agentElement) return;
+    
+    // Update agent name
+    const nameElement = agentElement.querySelector('.agent-name');
+    if (nameElement) {
+        nameElement.textContent = agentData.name || agentKey;
+    }
+    
+    // Update status badge
+    const statusElement = agentElement.querySelector('.agent-status');
+    if (statusElement) {
+        statusElement.textContent = agentData.is_active ? 'Active' : 'Inactive';
+        statusElement.className = `badge ${agentData.is_active ? 'bg-success' : 'bg-danger'}`;
+    }
+    
+    // Update framework
+    const frameworkElement = agentElement.querySelector('.agent-framework');
+    if (frameworkElement) {
+        frameworkElement.textContent = agentData.ethical_framework || 'Unknown';
+    }
+    
+    // Update response count
+    const responseElement = agentElement.querySelector('.agent-responses');
+    if (responseElement) {
+        responseElement.textContent = agentData.response_count || 0;
+    }
+    
+    // Update queue size
+    const queueElement = agentElement.querySelector('.agent-queue');
+    if (queueElement) {
+        queueElement.textContent = agentData.queue_size || 0;
+    }
+}
+
+// Update analytics
+function updateAnalytics(data) {
+    // Update total decisions
+    const totalDecisionsElement = document.getElementById('total-decisions');
+    if (totalDecisionsElement) {
+        totalDecisionsElement.textContent = data.total_decisions || 0;
+    }
+    
+    // Update decision distribution
+    if (data.decision_distribution) {
+        Object.keys(data.decision_distribution).forEach(decision => {
+            const element = document.getElementById(`decision-${decision.toLowerCase()}`);
+            if (element) {
+                element.textContent = data.decision_distribution[decision] || 0;
+            }
+        });
+    }
+    
+    // Update average confidence
+    const avgConfidenceElement = document.getElementById('avg-confidence');
+    if (avgConfidenceElement) {
+        avgConfidenceElement.textContent = ((data.average_confidence || 0) * 100).toFixed(1) + '%';
+    }
+    
+    // Update agent performance
+    if (data.agent_performance) {
+        Object.keys(data.agent_performance).forEach(agentKey => {
+            const performance = data.agent_performance[agentKey];
+            const element = document.getElementById(`performance-${agentKey}`);
+            if (element) {
+                element.textContent = performance.avg_confidence ? 
+                    (performance.avg_confidence * 100).toFixed(1) + '%' : 'N/A';
+            }
+        });
+    }
+}
+
+// Update deliberation status
+function updateDeliberationStatus(data) {
+    const statusElement = document.getElementById('deliberation-status');
+    if (statusElement) {
+        statusElement.textContent = data.status || 'Idle';
+        statusElement.className = `badge ${getDeliberationBadgeClass(data.status)}`;
+    }
+    
+    // Update progress bar
+    const progressElement = document.getElementById('deliberation-progress');
+    if (progressElement && data.progress !== undefined) {
+        progressElement.style.width = `${data.progress}%`;
+        progressElement.setAttribute('aria-valuenow', data.progress);
+    }
+}
+
+// Test moderation
+async function testModeration() {
+    const testContent = document.getElementById('test-content').value;
+    if (!testContent.trim()) {
+        alert('Please enter test content');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/moderate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                content: testContent,
+                context: {},
+                user_id: 'test-user',
+                platform: 'dashboard',
+                audience_size: 1000,
+                vulnerable_audience: false,
+                educational_value: 0.5,
+                public_interest: 0.5
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            displayModerationResult(result);
+        } else {
+            alert('Moderation failed: ' + result.detail);
+        }
+    } catch (error) {
+        console.error('Error testing moderation:', error);
+        alert('Error testing moderation');
+    }
+}
+
+// Display moderation result
+function displayModerationResult(result) {
+    const resultElement = document.getElementById('moderation-result');
+    if (!resultElement) return;
+    
+    resultElement.innerHTML = `
+        <div class="alert alert-${getDecisionAlertClass(result.decision)}">
+            <h5>Decision: ${result.decision}</h5>
+            <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+            <p><strong>Reasoning:</strong> ${result.reasoning}</p>
+            <p><strong>Task ID:</strong> ${result.task_id}</p>
+        </div>
+    `;
+    
+    resultElement.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Refresh data
+function refreshData() {
+    fetchSystemStatus();
+    fetchAnalytics();
+}
+
+// Fetch system status
+async function fetchSystemStatus() {
+    try {
+        const response = await fetch('/api/agents');
+        const data = await response.json();
+        
+        // Convert to expected format
+        const statusData = {
+            commander: {
+                name: 'EthicsCommander',
+                description: 'Master agent orchestrating ethical deliberation',
+                ethical_framework: 'Multi-Framework Orchestration',
+                is_active: true,
+                queue_size: 0,
+                response_count: 0
+            },
+            debate_agents: {},
+            total_agents: data.length,
+            active_agents: data.filter(agent => agent.is_active).length,
+            system_health: 'healthy'
+        };
+        
+        // Add specialist agents
+        data.forEach(agent => {
+            if (agent.name !== 'EthicsCommander') {
+                const agentKey = agent.name.toLowerCase().replace('agent', '');
+                statusData.debate_agents[agentKey] = agent;
+            }
+        });
+        
+        updateSystemStatus(statusData);
+    } catch (error) {
+        console.error('Error fetching system status:', error);
+    }
+}
+
+// Fetch analytics
+async function fetchAnalytics() {
+    try {
+        const response = await fetch('/api/analytics/summary');
+        const data = await response.json();
+        updateAnalytics(data);
+    } catch (error) {
+        console.error('Error fetching analytics:', error);
+    }
+}
+
+// Save settings
+function saveSettings(event) {
     event.preventDefault();
     
-    const content = document.getElementById('content-input').value.trim();
-    if (!content) {
-        showError('Please enter content to moderate');
-        return;
-    }
+    const formData = new FormData(event.target);
+    const settings = Object.fromEntries(formData.entries());
     
-    const submitButton = document.getElementById('submit-moderation');
-    const originalText = submitButton.innerHTML;
+    // Save settings to localStorage
+    localStorage.setItem('ethiq-settings', JSON.stringify(settings));
     
-    // Show loading state
-    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
-    submitButton.disabled = true;
-    
-    // Prepare request data
-    const requestData = {
-        content: content,
-        context: {
-            content_type: document.getElementById('content-type').value,
-            audience_size: parseInt(document.getElementById('audience-size').value),
-            vulnerable_audience: document.getElementById('vulnerable-audience').checked,
-            educational_value: document.getElementById('educational-value').checked,
-            public_interest: document.getElementById('public-interest').checked,
-            democratic_value: false,
-            target_cultures: ['global'],
-            audience_diversity: 'high'
-        }
-    };
-    
-    // Submit via API
-    fetch('/api/submit_moderation', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            showError(data.error);
-        } else {
-            showModerationResult(data);
-            // Clear form
-            document.getElementById('content-input').value = '';
-            document.getElementById('vulnerable-audience').checked = false;
-            document.getElementById('educational-value').checked = false;
-            document.getElementById('public-interest').checked = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showError('Failed to submit moderation request');
-    })
-    .finally(() => {
-        // Reset button
-        submitButton.innerHTML = originalText;
-        submitButton.disabled = false;
-    });
+    alert('Settings saved successfully');
 }
 
-// Handle moderation request via socket
-function handleModerationRequest(data) {
-    const content = data.content;
-    const context = data.context || {};
-    
-    if (!content) {
-        socket.emit('moderation_error', { error: 'Content is required' });
-        return;
-    }
-    
-    // Emit moderation request to server
-    socket.emit('request_moderation', {
-        content: content,
-        context: context
-    });
-}
-
-// Update system status indicator
-function updateSystemStatus(status, type) {
-    const indicator = document.getElementById('status-indicator');
-    const statusText = document.getElementById('system-status');
-    
-    if (indicator && statusText) {
-        indicator.className = `fas fa-circle text-${type} me-1 status-indicator ${type}`;
-        statusText.textContent = status;
-    }
-}
-
-// Update dashboard statistics
-function updateDashboardStats(data) {
-    // Update from analytics data
-    if (data.total_decisions !== undefined) {
-        document.getElementById('total-decisions').textContent = data.total_decisions;
-    }
-    
-    if (data.average_confidence !== undefined) {
-        const confidencePercent = Math.round(data.average_confidence * 100);
-        document.getElementById('avg-confidence').textContent = `${confidencePercent}%`;
-    }
-    
-    // Update from system status
-    if (data.active_agents !== undefined) {
-        document.getElementById('active-agents').textContent = data.active_agents;
-    }
-    
-    if (data.total_agents !== undefined && data.active_agents !== undefined) {
-        const consensusRate = data.total_agents > 0 ? Math.round((data.active_agents / data.total_agents) * 100) : 0;
-        document.getElementById('consensus-rate').textContent = `${consensusRate}%`;
-    }
-}
-
-// Update agent status grid
-function updateAgentStatusGrid(data) {
-    const grid = document.getElementById('agent-status-grid');
-    if (!grid) return;
-    
-    if (!data.debate_agents) {
-        grid.innerHTML = '<div class="col-12 text-center"><p class="text-muted">No agent data available</p></div>';
-        return;
-    }
-    
-    let html = '';
-    
-    // Add commander
-    if (data.commander) {
-        html += createAgentStatusCard('commander', data.commander);
-    }
-    
-    // Add debate agents
-    Object.entries(data.debate_agents).forEach(([name, agent]) => {
-        html += createAgentStatusCard(name, agent);
-    });
-    
-    grid.innerHTML = html;
-}
-
-// Create agent status card HTML
-function createAgentStatusCard(name, agent) {
-    const statusClass = agent.is_active ? 'active' : 'inactive';
-    const statusIcon = agent.is_active ? 'fa-check-circle text-success' : 'fa-times-circle text-danger';
-    
-    return `
-        <div class="col-md-6 col-lg-3">
-            <div class="agent-status-card ${statusClass}">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                        <div class="agent-name">${agent.name}</div>
-                        <div class="agent-framework">${agent.ethical_framework}</div>
-                    </div>
-                    <i class="fas ${statusIcon}"></i>
-                </div>
-                <div class="agent-metrics">
-                    <div class="agent-metric">
-                        <div class="agent-metric-value">${agent.response_count}</div>
-                        <div class="agent-metric-label">Responses</div>
-                    </div>
-                    <div class="agent-metric">
-                        <div class="agent-metric-value">${agent.queue_size}</div>
-                        <div class="agent-metric-label">Queue</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// Update recent activity feed
-function updateRecentActivity(data) {
-    const container = document.getElementById('recent-activity');
-    if (!container) return;
-    
-    if (!data || data.length === 0) {
-        container.innerHTML = '<div class="text-center text-muted"><p>No recent activity</p></div>';
-        return;
-    }
-    
-    // Take last 10 items
-    const recentItems = data.slice(-10).reverse();
-    
-    let html = '';
-    recentItems.forEach(item => {
-        const decisionClass = getDecisionClass(item.final_decision);
-        const timeAgo = formatTimeAgo(new Date(item.timestamp));
+// Load settings
+function loadSettings() {
+    const settings = localStorage.getItem('ethiq-settings');
+    if (settings) {
+        const parsedSettings = JSON.parse(settings);
         
-        html += `
-            <div class="activity-item ${decisionClass}">
-                <div class="activity-content text-truncate-2">${item.content_preview}</div>
-                <div class="activity-decision">Decision: ${item.final_decision}</div>
-                <div class="activity-time">${timeAgo} • ${item.agents_involved} agents</div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-}
-
-// Get CSS class for decision type
-function getDecisionClass(decision) {
-    switch (decision.toLowerCase()) {
-        case 'allow':
-            return 'decision-allow';
-        case 'remove':
-            return 'decision-remove';
-        case 'flag_for_review':
-            return 'decision-flag';
-        default:
-            return '';
+        Object.keys(parsedSettings).forEach(key => {
+            const element = document.getElementById(key);
+            if (element) {
+                element.value = parsedSettings[key];
+            }
+        });
     }
 }
 
-// Format time ago
-function formatTimeAgo(date) {
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+// Start periodic updates
+function startPeriodicUpdates() {
+    updateInterval = setInterval(() => {
+        fetchSystemStatus();
+        fetchAnalytics();
+    }, 5000); // Update every 5 seconds
 }
 
-// Show moderation result modal
-function showModerationResult(data) {
-    try {
-        const modalElement = document.getElementById('moderationResultModal');
-        if (!modalElement) {
-            console.error('Modal element not found');
-            return;
-        }
-        // Create the modal instance only once
-        if (!moderationResultModalInstance) {
-            moderationResultModalInstance = new bootstrap.Modal(modalElement);
-        }
-        const content = document.getElementById('moderation-result-content');
-        if (!content) {
-            console.error('Modal content element not found');
-            return;
-        }
-        const decisionClass = getDecisionClass(data.final_decision);
-        const confidencePercent = Math.round((data.confidence || 0) * 100);
-        let html = `
-            <div class="row">
-                <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="decision-badge ${decisionClass}">${data.final_decision || 'UNKNOWN'}</span>
-                        <span class="text-muted">Confidence: ${confidencePercent}%</span>
-                    </div>
-                    <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-12">
-                    <h6>Reasoning:</h6>
-                    <p class="text-muted">${data.reasoning || 'No reasoning provided'}</p>
-                </div>
-            </div>
-        `;
-        // Add individual agent responses
-        if (data.individual_responses && Object.keys(data.individual_responses).length > 0) {
-            html += '<div class="row mt-3"><div class="col-12"><h6>Agent Responses:</h6></div></div>';
-            // Highlight TemporalAgent and ExplainabilityAgent first
-            ['temporal', 'explainability'].forEach(agentKey => {
-                if (data.individual_responses[agentKey]) {
-                    const response = data.individual_responses[agentKey];
-                    const responseDecisionClass = getDecisionClass(response.decision);
-                    const responseConfidence = Math.round((response.confidence || 0) * 100);
-                    html += `
-                        <div class="agent-response-card agent-highlight-agent">
-                            <div class="agent-response-header">
-                                <div>
-                                    <div class="agent-response-name">${response.agent_name || agentKey} <span class="badge bg-info ms-2">${agentKey === 'temporal' ? 'Temporal Analysis' : 'Explainability'}</span></div>
-                                    <div class="agent-response-framework">${response.ethical_framework || 'Unknown'}</div>
-                                </div>
-                                <span class="decision-badge ${responseDecisionClass}">${response.decision || 'UNKNOWN'}</span>
-                            </div>
-                            <div class="agent-response-decision">Confidence: ${responseConfidence}%</div>
-                            <div class="agent-response-reasoning">${response.reasoning || 'No reasoning provided'}</div>
-                            ${response.supporting_evidence && response.supporting_evidence.length > 0 ? `
-                                <div class="agent-response-evidence">
-                                    <strong>Evidence:</strong><br>
-                                    ${response.supporting_evidence.map(evidence => 
-                                        `<span class="evidence-item">${evidence}</span>`
-                                    ).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                }
-            });
-            // Render the rest of the agents
-            Object.entries(data.individual_responses).forEach(([name, response]) => {
-                if (name === 'temporal' || name === 'explainability') return;
-                const responseDecisionClass = getDecisionClass(response.decision);
-                const responseConfidence = Math.round((response.confidence || 0) * 100);
-                html += `
-                    <div class="agent-response-card">
-                        <div class="agent-response-header">
-                            <div>
-                                <div class="agent-response-name">${response.agent_name || name}</div>
-                                <div class="agent-response-framework">${response.ethical_framework || 'Unknown'}</div>
-                            </div>
-                            <span class="decision-badge ${responseDecisionClass}">${response.decision || 'UNKNOWN'}</span>
-                        </div>
-                        <div class="agent-response-decision">Confidence: ${responseConfidence}%</div>
-                        <div class="agent-response-reasoning">${response.reasoning || 'No reasoning provided'}</div>
-                        ${response.supporting_evidence && response.supporting_evidence.length > 0 ? `
-                            <div class="agent-response-evidence">
-                                <strong>Evidence:</strong><br>
-                                ${response.supporting_evidence.map(evidence => 
-                                    `<span class="evidence-item">${evidence}</span>`
-                                ).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            });
-        }
-        // Add deliberation summary
-        if (data.deliberation_summary) {
-            const summary = data.deliberation_summary;
-            html += `
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <h6>Deliberation Summary:</h6>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <div class="h5 text-primary">${summary.agents_consulted || 0}</div>
-                                    <small class="text-muted">Agents Consulted</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <div class="h5 text-success">${summary.consensus_reached ? 'Yes' : 'No'}</div>
-                                    <small class="text-muted">Consensus Reached</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <div class="h5 text-warning">${summary.conflicts_resolved || 0}</div>
-                                    <small class="text-muted">Conflicts Resolved</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <div class="h5 text-info">${summary.deliberation_quality || 'Unknown'}</div>
-                                    <small class="text-muted">Quality</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        content.innerHTML = html;
-        moderationResultModalInstance.show();
-    } catch (error) {
-        console.error('Error showing moderation result:', error);
-        showError('Failed to display moderation result');
+// Stop periodic updates
+function stopPeriodicUpdates() {
+    if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
     }
 }
 
-// Show error message
-function showError(message) {
-    // Create toast notification
-    const toastContainer = document.getElementById('toast-container') || createToastContainer();
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-danger border-0';
-    toast.setAttribute('role', 'alert');
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    
-    toastContainer.appendChild(toast);
-    
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    // Remove toast after it's hidden
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
-}
-
-// Create toast container if it doesn't exist
-function createToastContainer() {
-    const container = document.createElement('div');
-    container.id = 'toast-container';
-    container.className = 'toast-container position-fixed top-0 end-0 p-3';
-    container.style.zIndex = '1055';
-    document.body.appendChild(container);
-    return container;
-}
-
-// Utility function to debounce API calls
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Auto-refresh data every 30 seconds
-setInterval(() => {
-    if (socket.connected) {
-        socket.emit('request_update');
+// Utility functions
+function getHealthBadgeClass(health) {
+    switch (health) {
+        case 'healthy': return 'bg-success';
+        case 'warning': return 'bg-warning';
+        case 'critical': return 'bg-danger';
+        default: return 'bg-secondary';
     }
-}, 30000); 
+}
+
+function getDeliberationBadgeClass(status) {
+    switch (status) {
+        case 'active': return 'bg-primary';
+        case 'completed': return 'bg-success';
+        case 'failed': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+
+function getDecisionAlertClass(decision) {
+    switch (decision) {
+        case 'ALLOW': return 'success';
+        case 'REMOVE': return 'danger';
+        case 'FLAG_FOR_REVIEW': return 'warning';
+        default: return 'info';
+    }
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    stopPeriodicUpdates();
+    if (socket) {
+        socket.disconnect();
+    }
+}); 
