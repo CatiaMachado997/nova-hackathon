@@ -19,9 +19,13 @@ websockets>=11.0.0
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 
-# Mock packages for unavailable integrations
-# Note: genai-agentos, cloudera-streaming are not available
-# Using mock implementations in the code instead
+# Core Project Dependencies (Currently Mocked)
+# These are core to the EthIQ project specification and need proper implementation:
+# - genai-agentos: GenAI AgentOS Protocol for agent orchestration and messaging
+# - cloudera-streaming: Cloudera data streaming and analytics integration
+# 
+# Current Status: Using mock implementations in agents/agentos_integration.py and agents/cloudera_integration.py
+# TODO: Implement proper GenAI AgentOS Protocol and Cloudera streaming integrations
 
 # Kafka integration (alternative to cloudera-streaming)
 kafka-python>=2.0.2

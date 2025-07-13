@@ -1,20 +1,15 @@
-#!/usr/bin/env python3
 """
-EthIQ Dashboard - Web Interface for Ethical Deliberation System
-Provides a modern web interface for content moderation and agent monitoring
+EthIQ Web Dashboard
+Flask-based web interface for the EthIQ ethical deliberation system
 """
 
-import asyncio
+import os
 import json
 import logging
 import requests
-import argparse
-import sys
 from datetime import datetime
-from typing import Dict, Any, List
-
-from flask import Flask, render_template, request, jsonify, redirect, url_for
-from flask_socketio import SocketIO, emit
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit, disconnect
 import threading
 import time
 
@@ -22,352 +17,331 @@ import time
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Flask app configuration
+# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ethiq-secret-key-2025'
-socketio = SocketIO(app, cors_allowed_origins="*")
 
-# API configuration
+# Initialize SocketIO with proper configuration
+socketio = SocketIO(app, 
+                   cors_allowed_origins="*",
+                   async_mode='threading',
+                   logger=True,
+                   engineio_logger=True)
+
+# Configuration
 API_BASE_URL = "http://localhost:8000"
-API_ENDPOINTS = {
-    "health": f"{API_BASE_URL}/health",
-    "moderate": f"{API_BASE_URL}/api/moderate",
-    "agents": f"{API_BASE_URL}/api/agents",
-    "history": f"{API_BASE_URL}/api/history",
-    "analytics": f"{API_BASE_URL}/api/analytics/summary",
-    "trends": f"{API_BASE_URL}/api/analytics/trends"
-}
-
-# Global state
-system_status = {"status": "unknown", "agents": {}}
-moderation_history = []
-analytics_data = {}
-
+DASHBOARD_PORT = 8080
 
 def check_api_health():
-    """Check if the API is running"""
+    """Check if the API server is running"""
     try:
-        response = requests.get(API_ENDPOINTS["health"], timeout=5)
+        response = requests.get(f"{API_BASE_URL}/health", timeout=5)
         return response.status_code == 200
-    except:
+    except requests.exceptions.RequestException:
         return False
 
-
 def fetch_system_status():
-    """Fetch current system status"""
-    global system_status
+    """Fetch system status from API"""
     try:
-        response = requests.get(API_ENDPOINTS["agents"], timeout=10)
+        response = requests.get(f"{API_BASE_URL}/api/agents", timeout=5)
         if response.status_code == 200:
-            system_status = response.json()
-            socketio.emit('system_status_update', system_status)
-    except Exception as e:
-        logger.error(f"Failed to fetch system status: {e}")
-
+            return response.json()
+        else:
+            return {"error": "Failed to fetch system status"}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"API connection error: {str(e)}"}
 
 def fetch_moderation_history():
-    """Fetch moderation history"""
-    global moderation_history
+    """Fetch moderation history from API"""
     try:
-        response = requests.get(API_ENDPOINTS["history"], timeout=10)
+        response = requests.get(f"{API_BASE_URL}/api/history", timeout=5)
         if response.status_code == 200:
-            moderation_history = response.json()
-            socketio.emit('history_update', moderation_history)
-    except Exception as e:
-        logger.error(f"Failed to fetch moderation history: {e}")
-
+            return response.json()
+        else:
+            return []
+    except requests.exceptions.RequestException:
+        return []
 
 def fetch_analytics():
-    """Fetch analytics data"""
-    global analytics_data
+    """Fetch analytics data from API"""
     try:
-        response = requests.get(API_ENDPOINTS["analytics"], timeout=10)
+        response = requests.get(f"{API_BASE_URL}/api/analytics/summary", timeout=5)
         if response.status_code == 200:
-            analytics_data = response.json()
-            socketio.emit('analytics_update', analytics_data)
-    except Exception as e:
-        logger.error(f"Failed to fetch analytics: {e}")
-
+            return response.json()
+        else:
+            return {"error": "Failed to fetch analytics"}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"API connection error: {str(e)}"}
 
 def background_updater():
-    """Background thread to update data periodically"""
+    """Background task to update dashboard data"""
     while True:
-        if check_api_health():
-            fetch_system_status()
-            fetch_moderation_history()
-            fetch_analytics()
-        time.sleep(30)  # Update every 30 seconds
-
-
-# Start background updater
-updater_thread = threading.Thread(target=background_updater, daemon=True)
-updater_thread.start()
-
+        try:
+            # Emit system status updates
+            status = fetch_system_status()
+            socketio.emit('system_status_update', status)
+            
+            # Emit analytics updates
+            analytics = fetch_analytics()
+            socketio.emit('analytics_update', analytics)
+            
+            time.sleep(10)  # Update every 10 seconds
+        except Exception as e:
+            logger.error(f"Background updater error: {e}")
+            time.sleep(30)  # Wait longer on error
 
 @app.route('/')
 def index():
     """Main dashboard page"""
     return render_template('dashboard.html')
 
-
 @app.route('/moderate')
 def moderate_page():
     """Content moderation page"""
     return render_template('moderate.html')
 
-
 @app.route('/agents')
 def agents_page():
-    """Agent monitoring page"""
-    return render_template('agents.html')
-
+    """Agent management page"""
+    return render_template('dashboard.html')
 
 @app.route('/analytics')
 def analytics_page():
     """Analytics page"""
-    return render_template('analytics.html')
-
+    return render_template('dashboard.html')
 
 @app.route('/history')
 def history_page():
-    """Moderation history page"""
-    return render_template('history.html')
-
+    """History page"""
+    return render_template('dashboard.html')
 
 @app.route('/integrations')
 def integrations_page():
     """Integrations page"""
     return render_template('integrations.html')
 
-
 @app.route('/api/submit_moderation', methods=['POST'])
 def submit_moderation():
     """Submit content for moderation"""
     try:
-        data = request.json
-        content = data.get('content', '')
-        context = data.get('context', {})
+        data = request.get_json()
         
-        if not content:
+        # Validate required fields
+        if not data or 'content' not in data:
             return jsonify({"error": "Content is required"}), 400
         
         # Prepare request for API
-        moderation_request = {
-            "content": content,
-            "content_type": context.get('content_type', 'text'),
-            "context": context,
-            "platform": context.get('platform', 'general'),
-            "audience_size": context.get('audience_size', 1000),
-            "vulnerable_audience": context.get('vulnerable_audience', False),
-            "educational_value": context.get('educational_value', False),
-            "public_interest": context.get('public_interest', False),
-            "democratic_value": context.get('democratic_value', False),
-            "target_cultures": context.get('target_cultures', ['global']),
-            "audience_diversity": context.get('audience_diversity', 'high')
+        api_request = {
+            "content": data.get('content', ''),
+            "content_type": data.get('content_type', 'text'),
+            "platform": data.get('platform', 'general'),
+            "audience_size": data.get('audience_size', 1000),
+            "vulnerable_audience": data.get('vulnerable_audience', False),
+            "educational_value": data.get('educational_value', False),
+            "public_interest": data.get('public_interest', False),
+            "context": {
+                "platform": data.get('platform', 'general'),
+                "audience_size": data.get('audience_size', 1000),
+                "vulnerable_audience": data.get('vulnerable_audience', False),
+                "educational_value": data.get('educational_value', False),
+                "public_interest": data.get('public_interest', False),
+                "audience_diversity": data.get('audience_diversity', 'high')
+            }
         }
         
         # Submit to API
         response = requests.post(
-            API_ENDPOINTS["moderate"],
-            json=moderation_request,
-            timeout=60
+            f"{API_BASE_URL}/api/moderate",
+            json=api_request,
+            timeout=30
         )
         
         if response.status_code == 200:
             result = response.json()
-            # Emit result to connected clients
-            socketio.emit('moderation_result', result)
+            
+            # Emit real-time update via WebSocket
+            socketio.emit('moderation_complete', {
+                'task_id': result.get('task_id'),
+                'decision': result.get('final_decision'),
+                'confidence': result.get('confidence'),
+                'timestamp': datetime.now().isoformat()
+            })
+            
             return jsonify(result)
         else:
-            return jsonify({"error": "Moderation failed"}), 500
+            return jsonify({"error": "API request failed"}), response.status_code
             
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"API connection error: {str(e)}"}), 503
     except Exception as e:
-        logger.error(f"Error in submit_moderation: {e}")
-        return jsonify({"error": str(e)}), 500
-
+        logger.error(f"Moderation error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route('/api/system_status')
 def get_system_status():
-    """Get current system status"""
-    return jsonify(system_status)
-
+    """Get system status"""
+    return jsonify(fetch_system_status())
 
 @app.route('/api/moderation_history')
 def get_moderation_history():
     """Get moderation history"""
-    return jsonify(moderation_history)
-
+    return jsonify(fetch_moderation_history())
 
 @app.route('/api/analytics')
 def get_analytics():
     """Get analytics data"""
-    return jsonify(analytics_data)
-
+    return jsonify(fetch_analytics())
 
 @app.route('/api/integrations/status')
 def get_integrations_status():
-    """Get integrations status from API"""
+    """Get integrations status"""
     try:
-        # Get AgentOS status
+        # Check AgentOS integration
         agentos_response = requests.get(f"{API_BASE_URL}/api/integrations/agentos/status", timeout=5)
-        agentos_status = agentos_response.json() if agentos_response.status_code == 200 else {"status": "error"}
+        agentos_status = agentos_response.json() if agentos_response.status_code == 200 else {"error": "Not available"}
         
-        # Get Cloudera status
+        # Check Cloudera integration
         cloudera_response = requests.get(f"{API_BASE_URL}/api/integrations/cloudera/status", timeout=5)
-        cloudera_status = cloudera_response.json() if cloudera_response.status_code == 200 else {"status": "error"}
+        cloudera_status = cloudera_response.json() if cloudera_response.status_code == 200 else {"error": "Not available"}
         
         return jsonify({
             "agentos": agentos_status,
             "cloudera": cloudera_status,
-            "notion": {"status": "active", "integration": "Notion"}  # Already integrated
+            "timestamp": datetime.now().isoformat()
         })
-    except Exception as e:
-        return jsonify({"error": f"Integrations status failed: {str(e)}"})
-
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "agentos": {"error": f"Connection error: {str(e)}"},
+            "cloudera": {"error": f"Connection error: {str(e)}"},
+            "timestamp": datetime.now().isoformat()
+        })
 
 @app.route('/api/cloudera/analytics')
 def get_cloudera_analytics():
-    """Get Cloudera analytics from API"""
+    """Get Cloudera analytics"""
     try:
-        response = requests.get(f"{API_BASE_URL}/api/integrations/cloudera/analytics", timeout=10)
+        response = requests.get(f"{API_BASE_URL}/api/integrations/cloudera/analytics", timeout=5)
         if response.status_code == 200:
             return jsonify(response.json())
         else:
-            return jsonify({"error": "Failed to get Cloudera analytics"})
-    except Exception as e:
-        return jsonify({"error": f"Cloudera analytics failed: {str(e)}"})
-
+            return jsonify({"error": "Failed to fetch Cloudera analytics"})
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"API connection error: {str(e)}"})
 
 @app.route('/api/submit_moderation_agentos', methods=['POST'])
 def submit_moderation_agentos():
-    """Submit content for moderation using GenAI AgentOS Protocol"""
+    """Submit content for moderation using AgentOS protocol"""
     try:
-        data = request.json
-        content = data.get('content', '')
-        context = data.get('context', {})
+        data = request.get_json()
         
-        if not content:
+        if not data or 'content' not in data:
             return jsonify({"error": "Content is required"}), 400
         
-        # Prepare request for API
-        moderation_request = {
-            "content": content,
-            "content_type": context.get('content_type', 'text'),
-            "context": context,
-            "platform": context.get('platform', 'general'),
-            "audience_size": context.get('audience_size', 1000),
-            "vulnerable_audience": context.get('vulnerable_audience', False),
-            "educational_value": context.get('educational_value', False),
-            "public_interest": context.get('public_interest', False),
-            "democratic_value": context.get('democratic_value', False),
-            "target_cultures": context.get('target_cultures', ['global']),
-            "audience_diversity": context.get('audience_diversity', 'high')
+        # Prepare request for AgentOS API
+        api_request = {
+            "content": data.get('content', ''),
+            "content_type": data.get('content_type', 'text'),
+            "platform": data.get('platform', 'general'),
+            "audience_size": data.get('audience_size', 1000),
+            "vulnerable_audience": data.get('vulnerable_audience', False),
+            "educational_value": data.get('educational_value', False),
+            "public_interest": data.get('public_interest', False),
+            "context": {
+                "platform": data.get('platform', 'general'),
+                "audience_size": data.get('audience_size', 1000),
+                "vulnerable_audience": data.get('vulnerable_audience', False),
+                "educational_value": data.get('educational_value', False),
+                "public_interest": data.get('public_interest', False),
+                "audience_diversity": data.get('audience_diversity', 'high')
+            }
         }
         
         # Submit to AgentOS API endpoint
         response = requests.post(
             f"{API_BASE_URL}/api/moderate/agentos",
-            json=moderation_request,
-            timeout=60
+            json=api_request,
+            timeout=30
         )
         
         if response.status_code == 200:
             result = response.json()
-            # Emit result to connected clients
-            socketio.emit('moderation_result_agentos', result)
+            
+            # Emit real-time update
+            socketio.emit('agentos_moderation_complete', {
+                'task_id': result.get('task_id'),
+                'protocol': result.get('protocol'),
+                'timestamp': datetime.now().isoformat()
+            })
+            
             return jsonify(result)
         else:
-            return jsonify({"error": "AgentOS moderation failed"}), 500
+            return jsonify({"error": "AgentOS API request failed"}), response.status_code
             
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"API connection error: {str(e)}"}), 503
     except Exception as e:
-        logger.error(f"Error in submit_moderation_agentos: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"AgentOS moderation error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
-
+# WebSocket event handlers
 @socketio.on('connect')
 def handle_connect():
     """Handle client connection"""
     logger.info("Client connected")
-    emit('connected', {'status': 'connected'})
+    emit('connected', {'data': 'Connected to EthIQ Dashboard'})
     
-    # Send current data
-    emit('system_status_update', system_status)
-    emit('history_update', moderation_history)
-    emit('analytics_update', analytics_data)
-
+    # Send initial data
+    status = fetch_system_status()
+    emit('system_status_update', status)
+    
+    analytics = fetch_analytics()
+    emit('analytics_update', analytics)
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handle client disconnection"""
     logger.info("Client disconnected")
 
-
 @socketio.on('request_moderation')
 def handle_moderation_request(data):
-    """Handle moderation request from client"""
+    """Handle moderation request via WebSocket"""
     try:
-        content = data.get('content', '')
-        context = data.get('context', {})
-        
-        if not content:
-            emit('moderation_error', {'error': 'Content is required'})
-            return
-        
-        # Submit moderation request
-        moderation_request = {
-            "content": content,
-            "content_type": context.get('content_type', 'text'),
-            "context": context,
-            "platform": context.get('platform', 'general'),
-            "audience_size": context.get('audience_size', 1000),
-            "vulnerable_audience": context.get('vulnerable_audience', False),
-            "educational_value": context.get('educational_value', False),
-            "public_interest": context.get('public_interest', False),
-            "democratic_value": context.get('democratic_value', False),
-            "target_cultures": context.get('target_cultures', ['global']),
-            "audience_diversity": context.get('audience_diversity', 'high')
-        }
-        
+        # Forward to API
         response = requests.post(
-            API_ENDPOINTS["moderate"],
-            json=moderation_request,
-            timeout=60
+            f"{API_BASE_URL}/api/moderate",
+            json=data,
+            timeout=30
         )
         
         if response.status_code == 200:
             result = response.json()
             emit('moderation_result', result)
         else:
-            emit('moderation_error', {'error': 'Moderation failed'})
+            emit('moderation_error', {'error': 'API request failed'})
             
     except Exception as e:
-        logger.error(f"Error in handle_moderation_request: {e}")
+        logger.error(f"WebSocket moderation error: {e}")
         emit('moderation_error', {'error': str(e)})
 
-
 if __name__ == '__main__':
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description='EthIQ Dashboard')
-    parser.add_argument('--port', type=int, default=8080, help='Port to run the dashboard on (default: 8080)')
-    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to bind to (default: 0.0.0.0)')
-    args = parser.parse_args()
+    # Start background updater in a separate thread
+    updater_thread = threading.Thread(target=background_updater, daemon=True)
+    updater_thread.start()
     
-    logger.info("Starting EthIQ Dashboard...")
-    logger.info(f"API Base URL: {API_BASE_URL}")
-    logger.info(f"Dashboard will run on {args.host}:{args.port}")
+    # Check API health before starting
+    if not check_api_health():
+        print(f"⚠️  Warning: API server at {API_BASE_URL} is not responding")
+        print("   The dashboard will work but some features may be limited")
+        print("   Start the API server with: python start.py (option 3)")
+        print()
     
-    # Check API health on startup
-    if check_api_health():
-        logger.info("API is running and healthy")
-    else:
-        logger.warning("API is not running. Please start the API server first.")
+    print(f"🌐 Starting EthIQ Dashboard on http://localhost:{DASHBOARD_PORT}")
+    print("   Press Ctrl+C to stop")
+    print()
     
-    # Run the dashboard
-    try:
-        socketio.run(app, host=args.host, port=args.port, debug=True)
-    except OSError as e:
-        if "Address already in use" in str(e):
-            logger.error(f"Port {args.port} is already in use. Try a different port with --port")
-            sys.exit(1)
-        else:
-            raise e
+    # Start the Flask-SocketIO server
+    socketio.run(app, 
+                host='0.0.0.0', 
+                port=DASHBOARD_PORT, 
+                debug=False,
+                allow_unsafe_werkzeug=True)
