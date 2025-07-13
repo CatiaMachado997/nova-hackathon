@@ -380,7 +380,38 @@ function showModerationResult(data) {
         // Add individual agent responses
         if (data.individual_responses && Object.keys(data.individual_responses).length > 0) {
             html += '<div class="row mt-3"><div class="col-12"><h6>Agent Responses:</h6></div></div>';
+            // Highlight TemporalAgent and ExplainabilityAgent first
+            ['temporal', 'explainability'].forEach(agentKey => {
+                if (data.individual_responses[agentKey]) {
+                    const response = data.individual_responses[agentKey];
+                    const responseDecisionClass = getDecisionClass(response.decision);
+                    const responseConfidence = Math.round((response.confidence || 0) * 100);
+                    html += `
+                        <div class="agent-response-card agent-highlight-agent">
+                            <div class="agent-response-header">
+                                <div>
+                                    <div class="agent-response-name">${response.agent_name || agentKey} <span class="badge bg-info ms-2">${agentKey === 'temporal' ? 'Temporal Analysis' : 'Explainability'}</span></div>
+                                    <div class="agent-response-framework">${response.ethical_framework || 'Unknown'}</div>
+                                </div>
+                                <span class="decision-badge ${responseDecisionClass}">${response.decision || 'UNKNOWN'}</span>
+                            </div>
+                            <div class="agent-response-decision">Confidence: ${responseConfidence}%</div>
+                            <div class="agent-response-reasoning">${response.reasoning || 'No reasoning provided'}</div>
+                            ${response.supporting_evidence && response.supporting_evidence.length > 0 ? `
+                                <div class="agent-response-evidence">
+                                    <strong>Evidence:</strong><br>
+                                    ${response.supporting_evidence.map(evidence => 
+                                        `<span class="evidence-item">${evidence}</span>`
+                                    ).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+            });
+            // Render the rest of the agents
             Object.entries(data.individual_responses).forEach(([name, response]) => {
+                if (name === 'temporal' || name === 'explainability') return;
                 const responseDecisionClass = getDecisionClass(response.decision);
                 const responseConfidence = Math.round((response.confidence || 0) * 100);
                 html += `

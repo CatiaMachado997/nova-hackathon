@@ -14,6 +14,8 @@ from .religious_ethics_agent import ReligiousEthicsAgent
 from .financial_impact_agent import FinancialImpactAgent
 from .consensus_agent import ConsensusAgent
 from .audit_logger import AuditLogger
+from .temporal_agent import TemporalAgent
+from .explainability_agent import ExplainabilityAgent
 
 # A2A Protocol and MCP Tool Manager
 from .a2a_protocol import A2AProtocol, A2AAgent, A2AMessage, MessageType, MessagePriority, a2a_protocol
@@ -33,6 +35,8 @@ __all__ = [
     'FinancialImpactAgent',
     'ConsensusAgent',
     'AuditLogger',
+    'TemporalAgent',
+    'ExplainabilityAgent',
     # A2A Protocol
     'A2AProtocol',
     'A2AAgent',

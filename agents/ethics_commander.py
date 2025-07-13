@@ -17,6 +17,8 @@ from .free_speech_agent import FreeSpeechAgent
 from .psychological_agent import PsychologicalAgent
 from .religious_ethics_agent import ReligiousEthicsAgent
 from .financial_impact_agent import FinancialImpactAgent
+from .temporal_agent import TemporalAgent
+from .explainability_agent import ExplainabilityAgent
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,9 @@ class EthicsCommander(BaseAgent):
             "free_speech": FreeSpeechAgent(),
             "psychological": PsychologicalAgent(),
             "religious_ethics": ReligiousEthicsAgent(),
-            "financial_impact": FinancialImpactAgent()
+            "financial_impact": FinancialImpactAgent(),
+            "temporal": TemporalAgent(),
+            "explainability": ExplainabilityAgent()
         }
         
         self.active_tasks = {}

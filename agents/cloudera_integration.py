@@ -6,6 +6,7 @@ Enables real-time data streaming and analytics through Cloudera platform
 import asyncio
 import json
 import logging
+import os
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import time
@@ -14,19 +15,30 @@ import time
 class ClouderaStreamingClient:
     """Client for Cloudera data streaming"""
     
-    def __init__(self, cluster_url: str, api_key: str):
+    def __init__(self, cluster_url: str, api_key: str, ssh_key_path: Optional[str] = None):
         self.cluster_url = cluster_url
         self.api_key = api_key
+        self.ssh_key_path = ssh_key_path
         self.is_connected = False
         self.logger = logging.getLogger(__name__)
     
     async def connect(self) -> bool:
         """Connect to Cloudera streaming cluster"""
         try:
-            # Simulate connection to Cloudera
+            # Simulate connection to Cloudera with API key authentication
             await asyncio.sleep(0.1)  # Simulate network delay
+            
+            # Validate API key (in real implementation, this would make an API call)
+            if not self.api_key or self.api_key == "your_api_key_here":
+                self.logger.warning("Using mock API key - replace with real Cloudera API key")
+            
             self.is_connected = True
             self.logger.info(f"Connected to Cloudera cluster: {self.cluster_url}")
+            self.logger.info(f"Using API key authentication: {self.api_key[:8]}...")
+            
+            if self.ssh_key_path:
+                self.logger.info(f"SSH key configured: {self.ssh_key_path}")
+            
             return True
         except Exception as e:
             self.logger.error(f"Failed to connect to Cloudera: {e}")
@@ -228,8 +240,9 @@ class ClouderaDashboard:
 
 # Global Cloudera integration instances
 cloudera_client = ClouderaStreamingClient(
-    cluster_url="https://cloudera-cluster.example.com",
-    api_key="your-cloudera-api-key"
+    cluster_url=os.getenv("CLOUDERA_HOST", "https://cloudera-cluster.example.com"),
+    api_key=os.getenv("CLOUDERA_API_KEY", "your-cloudera-api-key"),
+    ssh_key_path=os.getenv("CLOUDERA_SSH_KEY_PATH")
 )
 
 cloudera_analytics = ClouderaAnalytics(cloudera_client)
