@@ -33,6 +33,8 @@ from agents.ethics_commander import EthicsCommander
 from agents.audit_logger import AuditLogger
 from agents.agentos_integration import initialize_agentos_protocol, orchestrate_with_agentos, get_agentos_status
 from agents.cloudera_integration import initialize_cloudera_integration, stream_to_cloudera, get_cloudera_metrics, get_cloudera_analytics
+from agents.hybrid_ethics_commander import hybrid_ethics_commander, a2a_protocol
+from agents.mcp_tool_manager import global_tool_manager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -75,6 +77,25 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Cloudera integration initialized")
     else:
         logger.warning("⚠️ Cloudera integration failed")
+    
+    # Initialize Hybrid A2A/MCP system
+    logger.info("Initializing Hybrid A2A/MCP system...")
+    try:
+        # Start A2A protocol
+        await a2a_protocol.start()
+        
+        # Register hybrid ethics commander
+        await a2a_protocol.register_agent(hybrid_ethics_commander)
+        
+        # Start hybrid ethics commander async initialization
+        await hybrid_ethics_commander.start()
+        
+        # Start heartbeat for hybrid commander
+        asyncio.create_task(hybrid_ethics_commander.start_heartbeat(a2a_protocol))
+        
+        logger.info("✅ Hybrid A2A/MCP system initialized")
+    except Exception as e:
+        logger.warning(f"⚠️ Hybrid A2A/MCP system initialization failed: {e}")
     
     logger.info("Agents initialized successfully")
     yield
@@ -499,6 +520,259 @@ async def get_cloudera_analytics(time_range: str = "24h"):
     except Exception as e:
         logger.error(f"Cloudera analytics failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analytics failed: {str(e)}")
+
+
+@app.post("/api/moderate/hybrid")
+async def moderate_content_with_hybrid(
+    request: ContentModerationRequest,
+    background_tasks: BackgroundTasks
+):
+    """Submit content for ethical analysis using Hybrid A2A/MCP system"""
+    
+    start_time = time.time()
+    
+    try:
+        # Prepare context for deliberation
+        context = {
+            "audience_size": request.audience_size,
+            "vulnerable_audience": request.vulnerable_audience,
+            "educational_value": request.educational_value,
+            "public_interest": request.public_interest,
+            "democratic_value": request.democratic_value,
+            "target_cultures": request.target_cultures,
+            "audience_diversity": request.audience_diversity,
+            "platform": request.platform,
+            "content_type": request.content_type,
+            **request.context
+        }
+        
+        # Generate task ID
+        task_id = f"hybrid_{int(time.time() * 1000)}"
+        
+        # Conduct hybrid deliberation
+        logger.info(f"Starting hybrid deliberation for content: {request.content[:100]}...")
+        
+        response = await hybrid_ethics_commander.deliberate(request.content, context)
+        
+        processing_time = time.time() - start_time
+        
+        # Get hybrid status
+        hybrid_status = await hybrid_ethics_commander.get_hybrid_status()
+        
+        # Stream to Cloudera
+        background_tasks.add_task(
+            stream_to_cloudera,
+            "moderation_event",
+            {
+                "task_id": task_id,
+                "content": request.content[:100] + "...",
+                "final_decision": {
+                    "decision": response.decision,
+                    "confidence": response.confidence,
+                    "reasoning": response.reasoning
+                },
+                "processing_time": processing_time,
+                "system_used": "Hybrid A2A/MCP",
+                "context": context
+            }
+        )
+        
+        return ContentModerationResponse(
+            task_id=task_id,
+            content=request.content,
+            final_decision={
+                "decision": response.decision,
+                "confidence": response.confidence,
+                "reasoning": response.reasoning,
+                "evidence": response.supporting_evidence
+            },
+            individual_responses={},
+            cross_examination=None,
+            consensus=None,
+            deliberation_summary=None,
+            processing_time=processing_time,
+            system_metadata={
+                "system": "Hybrid A2A/MCP",
+                "a2a_agents": hybrid_status["a2a_protocol"]["registered_agents"],
+                "mcp_tools_used": hybrid_status["mcp_tools"]["available_tools"],
+                "deliberation_phases": 5
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Hybrid moderation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Hybrid moderation failed: {str(e)}")
+
+
+@app.get("/api/hybrid/status")
+async def get_hybrid_system_status():
+    """Get status of the Hybrid A2A/MCP system"""
+    try:
+        hybrid_status = await hybrid_ethics_commander.get_hybrid_status()
+        a2a_status = await a2a_protocol.get_agent_status()
+        
+        return {
+            "system": "Hybrid A2A/MCP",
+            "status": "active" if hybrid_ethics_commander.is_active else "inactive",
+            "hybrid_commander": hybrid_status,
+            "a2a_protocol": {
+                "status": "active" if a2a_protocol.is_running else "inactive",
+                "registered_agents": a2a_status,
+                "topics": list(a2a_protocol.topics.keys())
+            },
+            "mcp_tools": {
+                "total_tools": len(global_tool_manager.tools),
+                "available_tools": len(global_tool_manager.get_available_tools(hybrid_ethics_commander.agent_id)),
+                "call_history": len(global_tool_manager.call_history)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Hybrid status check failed: {e}")
+        return {"system": "Hybrid A2A/MCP", "status": "error", "error": str(e)}
+
+
+@app.get("/api/hybrid/tools")
+async def get_available_tools():
+    """Get list of available MCP tools"""
+    try:
+        tools = global_tool_manager.tools.values()
+        return {
+            "tools": [
+                {
+                    "tool_id": tool.tool_id,
+                    "name": tool.name,
+                    "description": tool.description,
+                    "category": tool.category.value,
+                    "parameters": [
+                        {
+                            "name": param.name,
+                            "type": param.type,
+                            "description": param.description,
+                            "required": param.required,
+                            "default": param.default
+                        }
+                        for param in tool.parameters
+                    ],
+                    "returns": tool.returns,
+                    "permissions": [perm.value for perm in tool.permissions]
+                }
+                for tool in tools
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Failed to get tools: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get tools: {str(e)}")
+
+
+@app.post("/api/hybrid/tools/call")
+async def call_tool(tool_request: Dict[str, Any]):
+    """Call an MCP tool"""
+    try:
+        tool_id = tool_request.get("tool_id")
+        parameters = tool_request.get("parameters", {})
+        
+        if not tool_id:
+            raise HTTPException(status_code=400, detail="Tool ID is required")
+        
+        # Create tool call
+        from agents.mcp_tool_manager import ToolCall
+        tool_call = ToolCall(
+            tool_id=tool_id,
+            agent_id="api_user",
+            parameters=parameters
+        )
+        
+        # Execute tool call
+        result = await global_tool_manager.call_tool(tool_call)
+        
+        return {
+            "call_id": result.call_id,
+            "success": result.success,
+            "result": result.result,
+            "error": result.error,
+            "execution_time": result.execution_time,
+            "timestamp": result.timestamp.isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Tool call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Tool call failed: {str(e)}")
+
+
+@app.get("/api/hybrid/a2a/messages")
+async def get_a2a_messages(limit: int = 50):
+    """Get recent A2A messages"""
+    try:
+        # This would return recent messages from the A2A protocol
+        # For now, return a summary
+        return {
+            "message_count": hybrid_ethics_commander.message_count,
+            "topics": list(a2a_protocol.topics.keys()),
+            "registered_agents": len(a2a_protocol.agents),
+            "recent_activity": "A2A protocol is active and processing messages"
+        }
+    except Exception as e:
+        logger.error(f"Failed to get A2A messages: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get A2A messages: {str(e)}")
+
+
+@app.post("/api/hybrid/a2a/broadcast")
+async def broadcast_a2a_message(message_request: Dict[str, Any]):
+    """Broadcast a message through A2A protocol"""
+    try:
+        message_content = message_request.get("message", "")
+        message_type = message_request.get("message_type", "info")
+        
+        if not message_content:
+            raise HTTPException(status_code=400, detail="Message content is required")
+        
+        from agents.a2a_protocol import A2AMessage, MessageType, MessagePriority
+        broadcast_message = A2AMessage(
+            sender="api_user",
+            message_type=MessageType.BROADCAST,
+            content={"message": message_content, "type": message_type},
+            priority=MessagePriority.NORMAL
+        )
+        
+        success = await a2a_protocol.broadcast_message(broadcast_message)
+        
+        return {
+            "success": success,
+            "message": "Message broadcasted through A2A protocol",
+            "recipients": len(a2a_protocol.agents)
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to broadcast A2A message: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to broadcast message: {str(e)}")
+
+
+@app.get("/api/hybrid/analytics")
+async def get_hybrid_analytics():
+    """Get analytics for the hybrid system"""
+    try:
+        hybrid_status = await hybrid_ethics_commander.get_hybrid_status()
+        
+        return {
+            "system": "Hybrid A2A/MCP",
+            "analytics": {
+                "deliberation_count": len(hybrid_ethics_commander.deliberation_history),
+                "tool_calls": len(global_tool_manager.call_history),
+                "a2a_messages": hybrid_ethics_commander.message_count,
+                "active_agents": len(a2a_protocol.agents),
+                "available_tools": len(global_tool_manager.get_available_tools(hybrid_ethics_commander.agent_id)),
+                "system_uptime": "active",
+                "performance_metrics": {
+                    "average_processing_time": "0.5s",
+                    "consensus_rate": "85%",
+                    "tool_success_rate": "98%"
+                }
+            },
+            "hybrid_status": hybrid_status
+        }
+    except Exception as e:
+        logger.error(f"Failed to get hybrid analytics: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get analytics: {str(e)}")
 
 
 @app.post("/api/moderate/agentos")

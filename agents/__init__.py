@@ -15,6 +15,11 @@ from .financial_impact_agent import FinancialImpactAgent
 from .consensus_agent import ConsensusAgent
 from .audit_logger import AuditLogger
 
+# A2A Protocol and MCP Tool Manager
+from .a2a_protocol import A2AProtocol, A2AAgent, A2AMessage, MessageType, MessagePriority, a2a_protocol
+from .mcp_tool_manager import MCPToolManager, ToolCall, ToolResult, ToolDefinition, ToolPermission, global_tool_manager
+from .hybrid_ethics_commander import HybridEthicsCommander, hybrid_ethics_commander
+
 __all__ = [
     'BaseAgent',
     'LLMEthicsAgent',
@@ -27,5 +32,22 @@ __all__ = [
     'ReligiousEthicsAgent',
     'FinancialImpactAgent',
     'ConsensusAgent',
-    'AuditLogger'
+    'AuditLogger',
+    # A2A Protocol
+    'A2AProtocol',
+    'A2AAgent',
+    'A2AMessage',
+    'MessageType',
+    'MessagePriority',
+    'a2a_protocol',
+    # MCP Tool Manager
+    'MCPToolManager',
+    'ToolCall',
+    'ToolResult',
+    'ToolDefinition',
+    'ToolPermission',
+    'global_tool_manager',
+    # Hybrid System
+    'HybridEthicsCommander',
+    'hybrid_ethics_commander'
 ]
