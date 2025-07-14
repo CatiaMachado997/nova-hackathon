@@ -352,8 +352,8 @@ class ClouderaProjectIntegration:
             "agent_performance": {
                 "utilitarian": {"avg_confidence": 0.89, "response_count": 1250},
                 "deontological": {"avg_confidence": 0.87, "response_count": 1250},
-                "temporal": {"avg_confidence": 0.82, "response_count": 1250},
-                "explainability": {"avg_confidence": 0.91, "response_count": 1250}
+                "cultural_context": {"avg_confidence": 0.82, "response_count": 1250},
+                "free_speech": {"avg_confidence": 0.91, "response_count": 1250}
             },
             "system_health": {
                 "uptime_percentage": 99.8,

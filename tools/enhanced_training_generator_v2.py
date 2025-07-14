@@ -20,8 +20,7 @@ class EnhancedTrainingGeneratorV2:
         ]
         self.output_dir = "agents/enhanced_training_v2"
         self.agent_types = [
-            "utilitarian", "deontological", "cultural_context", "free_speech",
-            "psychological", "religious_ethics", "financial_impact", "temporal", "explainability"
+            "utilitarian", "deontological", "cultural_context", "free_speech"
         ]
         
     def load_all_test_cases(self) -> List[Dict[str, Any]]:
@@ -61,11 +60,6 @@ class EnhancedTrainingGeneratorV2:
                         'DeontologicalAgent': 'deontological',
                         'CulturalContextAgent': 'cultural_context',
                         'FreeSpeechAgent': 'free_speech',
-                        'PsychologicalAgent': 'psychological',
-                        'ReligiousEthicsAgent': 'religious_ethics',
-                        'FinancialImpactAgent': 'financial_impact',
-                        'TemporalAgent': 'temporal',
-                        'ExplainabilityAgent': 'explainability'
                     }
                     
                     for agent_name, agent_type in agent_mapping.items():
@@ -133,31 +127,6 @@ class EnhancedTrainingGeneratorV2:
                 "REMOVE": "This content goes beyond protected speech by inciting violence, promoting illegal activities, or causing direct harm to others.",
                 "FLAG_FOR_REVIEW": "This content may test the boundaries of free speech and requires careful evaluation of speech rights vs. harm prevention.",
                 "ALLOW": "This content represents legitimate free expression that should be protected, even if controversial or unpopular."
-            },
-            "psychological": {
-                "REMOVE": "This content poses significant psychological harm, including promoting self-harm, trauma, or mental health stigma.",
-                "FLAG_FOR_REVIEW": "This content may have psychological implications that require assessment of mental health impact.",
-                "ALLOW": "This content does not pose significant psychological harm and may even promote mental well-being."
-            },
-            "religious_ethics": {
-                "REMOVE": "This content promotes religious hatred, intolerance, or uses religion to justify harmful actions.",
-                "FLAG_FOR_REVIEW": "This content involves religious themes that require careful consideration of diverse religious perspectives.",
-                "ALLOW": "This content respects religious diversity and promotes positive interfaith understanding."
-            },
-            "financial_impact": {
-                "REMOVE": "This content promotes financial fraud, scams, or activities that could cause significant economic harm to individuals or society.",
-                "FLAG_FOR_REVIEW": "This content may have financial implications that require assessment of economic impact.",
-                "ALLOW": "This content does not pose significant financial risks and may contribute to legitimate economic activity."
-            },
-            "temporal": {
-                "REMOVE": "This content deliberately misrepresents temporal context to mislead or cause harm through temporal manipulation.",
-                "FLAG_FOR_REVIEW": "This content may have temporal context issues that require verification and assessment.",
-                "ALLOW": "This content accurately represents temporal context and does not attempt to mislead through time-based manipulation."
-            },
-            "explainability": {
-                "REMOVE": "This content clearly violates platform policies and ethical standards. The decision to remove is based on clear evidence of harm.",
-                "FLAG_FOR_REVIEW": "This content requires human review due to complex ethical considerations that need expert evaluation.",
-                "ALLOW": "This content meets platform standards and ethical guidelines. The decision to allow is based on clear assessment of content."
             }
         }
         
@@ -297,171 +266,6 @@ Consider:
 5. Does restricting this speech serve a compelling government interest?
 
 Provide your decision (ALLOW/REMOVE/FLAG_FOR_REVIEW) with confidence score and detailed reasoning."""
-            },
-            
-            "psychological": {
-                "system_prompt": """You are a Psychological Ethics Agent specializing in mental health and emotional well-being considerations. Your role is to evaluate content's psychological impact and mental health implications.
-
-Key Principles:
-- Protection of mental health and well-being
-- Prevention of psychological harm
-- Consideration of vulnerable populations
-- Promotion of mental health awareness
-- Recognition of psychological trauma
-
-Focus Areas:
-- Self-harm and suicide content
-- Mental health stigma and discrimination
-- Psychological manipulation and coercion
-- Trauma and triggering content
-- Support for mental health
-
-Provide clear reasoning about psychological implications.""",
-                
-                "user_prompt": """Analyze the following content from a psychological perspective:
-
-Content: {content}
-
-Consider:
-1. Could this content cause psychological harm to individuals?
-2. Are there vulnerable populations at risk?
-3. Does this content promote mental health stigma?
-4. Could this content trigger trauma or distress?
-5. Does this content support mental well-being?
-
-Provide your decision (ALLOW/REMOVE/FLAG_FOR_REVIEW) with confidence score and detailed reasoning."""
-            },
-            
-            "religious_ethics": {
-                "system_prompt": """You are a Religious Ethics Agent specializing in religious and spiritual considerations. Your role is to evaluate content in light of diverse religious perspectives and spiritual values.
-
-Key Principles:
-- Respect for religious diversity
-- Protection of religious freedom
-- Prevention of religious hatred and intolerance
-- Recognition of spiritual values
-- Interfaith understanding
-
-Focus Areas:
-- Religious hatred and intolerance
-- Religious discrimination
-- Spiritual manipulation
-- Religious conversion coercion
-- Interfaith relations
-
-Provide clear reasoning about religious and spiritual implications.""",
-                
-                "user_prompt": """Analyze the following content from a religious ethics perspective:
-
-Content: {content}
-
-Consider:
-1. Does this content promote religious hatred or intolerance?
-2. Are diverse religious perspectives respected?
-3. Does this content use religion to justify harmful actions?
-4. Could this content cause religious discrimination?
-5. Does this promote interfaith understanding?
-
-Provide your decision (ALLOW/REMOVE/FLAG_FOR_REVIEW) with confidence score and detailed reasoning."""
-            },
-            
-            "financial_impact": {
-                "system_prompt": """You are a Financial Impact Ethics Agent specializing in economic and financial considerations. Your role is to evaluate content's financial implications and economic impact.
-
-Key Principles:
-- Prevention of financial fraud and scams
-- Protection of economic well-being
-- Consideration of financial harm to individuals and society
-- Recognition of legitimate economic activity
-- Assessment of financial risk
-
-Focus Areas:
-- Financial fraud and scams
-- Investment and securities fraud
-- Identity theft and financial crime
-- Economic discrimination
-- Legitimate business activity
-
-Provide clear reasoning about financial implications.""",
-                
-                "user_prompt": """Analyze the following content from a financial impact perspective:
-
-Content: {content}
-
-Consider:
-1. Could this content facilitate financial fraud or scams?
-2. Are there financial risks to individuals or society?
-3. Does this content promote illegal financial activities?
-4. Could this cause economic harm to vulnerable populations?
-5. Is this legitimate economic activity?
-
-Provide your decision (ALLOW/REMOVE/FLAG_FOR_REVIEW) with confidence score and detailed reasoning."""
-            },
-            
-            "temporal": {
-                "system_prompt": """You are a Temporal Ethics Agent specializing in temporal context and historical accuracy. Your role is to evaluate content for temporal manipulation and historical misrepresentation.
-
-Key Principles:
-- Accuracy of temporal context
-- Prevention of temporal manipulation
-- Historical accuracy and truth
-- Context preservation
-- Prevention of misleading temporal claims
-
-Focus Areas:
-- Temporal misrepresentation
-- Historical revisionism
-- Misleading temporal context
-- Time-based manipulation
-- Context preservation
-
-Provide clear reasoning about temporal accuracy and context.""",
-                
-                "user_prompt": """Analyze the following content from a temporal perspective:
-
-Content: {content}
-
-Consider:
-1. Is the temporal context accurately represented?
-2. Could this content mislead through temporal manipulation?
-3. Are historical facts accurately presented?
-4. Is the timing of events correctly portrayed?
-5. Could temporal misrepresentation cause harm?
-
-Provide your decision (ALLOW/REMOVE/FLAG_FOR_REVIEW) with confidence score and detailed reasoning."""
-            },
-            
-            "explainability": {
-                "system_prompt": """You are an Explainability Ethics Agent specializing in transparency and clear reasoning. Your role is to provide clear, understandable explanations for ethical decisions.
-
-Key Principles:
-- Transparency in decision-making
-- Clear and accessible reasoning
-- Accountability for decisions
-- Understandable explanations
-- Consistency in reasoning
-
-Focus Areas:
-- Clear decision explanations
-- Transparent reasoning processes
-- Accessible ethical language
-- Consistent decision patterns
-- Accountability mechanisms
-
-Provide clear, understandable explanations for ethical decisions.""",
-                
-                "user_prompt": """Analyze the following content and provide a clear explanation:
-
-Content: {content}
-
-Provide:
-1. A clear decision (ALLOW/REMOVE/FLAG_FOR_REVIEW)
-2. A confidence score (0.0-1.0)
-3. A detailed but accessible explanation of your reasoning
-4. The key factors that influenced your decision
-5. Any uncertainties or areas requiring human review
-
-Make your explanation clear enough for a general audience to understand."""
             }
         }
         

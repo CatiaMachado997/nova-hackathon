@@ -4,8 +4,7 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 import aiohttp
-from agents.base_agent import BaseAgent
-from api.schemas import AgentResponse, ContentModerationRequest
+from agents.base_agent import BaseAgent, AgentResponse
 
 logger = logging.getLogger(__name__)
 
@@ -18,63 +17,18 @@ class DeontologicalAgent(BaseAgent):
             description="Agent applying deontological (duty-based) ethical reasoning.",
             ethical_framework="Deontological Ethics"
         )
-        self.agentos_session = None
-        self.jwt_token = None
-        self.agentos_url = "http://localhost:8001"  # Real AgentOS URL
-        self.agent_id = "deontological_agent"
         
     async def initialize(self):
-        """Initialize real AgentOS connection"""
-        try:
-            # Get JWT token from AgentOS
-            async with aiohttp.ClientSession() as session:
-                auth_response = await session.post(
-                    f"{self.agentos_url}/auth/login",
-                    json={
-                        "username": "ethiq_user",
-                        "password": "ethiq_password"
-                    }
-                )
-                if auth_response.status == 200:
-                    auth_data = await auth_response.json()
-                    self.jwt_token = auth_data.get("access_token")
-                    logger.info("✅ Authenticated with AgentOS")
-                else:
-                    logger.warning("⚠️ Could not authenticate with AgentOS, using mock mode")
-                    self.jwt_token = None
-                    
-            # Register agent with AgentOS
-            if self.jwt_token:
-                headers = {"Authorization": f"Bearer {self.jwt_token}"}
-                async with aiohttp.ClientSession() as session:
-                    register_response = await session.post(
-                        f"{self.agentos_url}/agents/register",
-                        headers=headers,
-                        json={
-                            "agent_id": self.agent_id,
-                            "name": "DeontologicalAgent",
-                            "description": "Deontological ethical reasoning agent",
-                            "capabilities": ["ethical_analysis", "duty_assessment"],
-                            "endpoint": "http://localhost:8000/agents/deontological"
-                        }
-                    )
-                    if register_response.status == 200:
-                        logger.info("✅ Registered with AgentOS")
-                    else:
-                        logger.warning("⚠️ Could not register with AgentOS")
-                        
-        except Exception as e:
-            logger.warning(f"⚠️ AgentOS initialization failed: {e}, using mock mode")
-            self.jwt_token = None
-            
+        """Initialize AgentOS connection"""
+        await self.initialize_agentos()
+        
     async def analyze_content(self, content: str, context: Dict[str, Any]) -> AgentResponse:
         """Analyze content using deontological ethical reasoning"""
         try:
             # Try AgentOS first
-            if self.agentos_session and self.jwt_token:
-                agentos_response = await self._analyze_with_agentos(content, context)
-                if agentos_response:
-                    return agentos_response
+            agentos_response = await self.analyze_with_agentos(content, context)
+            if agentos_response:
+                return agentos_response
             
             # Fallback to local analysis
             return await self._analyze_locally(content, context)
@@ -107,24 +61,54 @@ class DeontologicalAgent(BaseAgent):
 
     async def _analyze_locally(self, content: str, context: Dict[str, Any]) -> AgentResponse:
         """Analyze content using local deontological reasoning"""
-        # Duty-based analysis: focus on rules and principles
-        harmful_keywords = [
-            "kill", "harm", "hurt", "dangerous", "threat", "attack", "violence",
-            "hate", "discriminate", "bully", "abuse", "exploit"
+        # Duty-based ethical analysis
+        content_lower = content.lower()
+        
+        # Check for violations of moral duties
+        duty_violations = [
+            "kill", "murder", "harm", "hurt", "abuse", "exploit", "deceive", "lie",
+            "steal", "cheat", "discriminate", "hate", "threaten", "intimidate"
         ]
         
-        content_lower = content.lower()
-        harmful_score = sum(1 for keyword in harmful_keywords if keyword in content_lower)
+        violation_score = sum(1 for word in duty_violations if word in content_lower)
         
-        # Deontological analysis: duty to prevent harm
-        if harmful_score >= 2:
+        # Check for respect for human dignity
+        dignity_keywords = [
+            "human rights", "dignity", "respect", "equality", "fairness", "justice",
+            "compassion", "empathy", "kindness", "help", "support", "care"
+        ]
+        
+        dignity_score = sum(1 for word in dignity_keywords if word in content_lower)
+        
+        # Deontological analysis: focus on moral duties and principles
+        if violation_score >= 2:
+            return AgentResponse(
+                agent_name=self.name,
+                ethical_framework=self.ethical_framework,
+                decision="REMOVE",
+                confidence=0.8,
+                reasoning="Content violates fundamental moral duties and principles",
+                supporting_evidence=[f"Detected {violation_score} potential duty violations"],
+                timestamp=datetime.now()
+            )
+        elif violation_score >= 1:
             return AgentResponse(
                 agent_name=self.name,
                 ethical_framework=self.ethical_framework,
                 decision="FLAG_FOR_REVIEW",
-                confidence=0.7,
-                reasoning="Content may violate duty to prevent harm",
-                supporting_evidence=[f"Detected {harmful_score} potentially harmful keywords"],
+                confidence=0.6,
+                reasoning="Content may violate some moral duties, requires review",
+                supporting_evidence=[f"Detected {violation_score} potential duty violations"],
+                timestamp=datetime.now()
+            )
+        elif dignity_score >= 2:
+            return AgentResponse(
+                agent_name=self.name,
+                ethical_framework=self.ethical_framework,
+                decision="ALLOW",
+                confidence=0.9,
+                reasoning="Content promotes respect for human dignity and moral principles",
+                supporting_evidence=[f"Detected {dignity_score} dignity-promoting keywords"],
                 timestamp=datetime.now()
             )
         else:
@@ -137,11 +121,7 @@ class DeontologicalAgent(BaseAgent):
                 supporting_evidence=["No clear violations of ethical duties detected"],
                 timestamp=datetime.now()
             )
-
+    
     async def shutdown(self):
         """Cleanup AgentOS connection"""
-        await super().shutdown()
-        if self.agentos_session:
-            await self.agentos_session.close()
-            self.agentos_session = None
-        self.jwt_token = None 
+        await super().shutdown() 

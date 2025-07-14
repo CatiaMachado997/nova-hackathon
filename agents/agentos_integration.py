@@ -210,17 +210,20 @@ class RealAgentOSIntegration:
                 "timestamp": datetime.now().isoformat()
             }
             
-            response = await self.session.post(
-                f"{self.agentos_url}/moderate",
-                json=moderation_data,
-                headers=headers
-            )
-            
-            if response.status == 200:
-                return await response.json()
+            if self.session:
+                response = await self.session.post(
+                    f"{self.agentos_url}/moderate",
+                    json=moderation_data,
+                    headers=headers
+                )
+                
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    logger.warning(f"AgentOS moderation failed: {response.status}")
+                    return {"error": "AgentOS moderation failed"}
             else:
-                logger.warning(f"AgentOS moderation failed: {response.status}")
-                return {"error": "AgentOS moderation failed"}
+                return {"error": "AgentOS session not available"}
                 
         except Exception as e:
             logger.error(f"AgentOS orchestration error: {e}")
@@ -234,15 +237,18 @@ class RealAgentOSIntegration:
             
             headers = {"Authorization": f"Bearer {self.jwt_token}"} if self.jwt_token else {}
             
-            response = await self.session.get(
-                f"{self.agentos_url}/status",
-                headers=headers
-            )
-            
-            if response.status == 200:
-                return await response.json()
+            if self.session:
+                response = await self.session.get(
+                    f"{self.agentos_url}/status",
+                    headers=headers
+                )
+                
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    return {"status": "disconnected", "error": f"HTTP {response.status}"}
             else:
-                return {"status": "disconnected", "error": f"HTTP {response.status}"}
+                return {"status": "error", "error": "Session not available"}
                 
         except Exception as e:
             logger.error(f"Failed to get AgentOS status: {e}")

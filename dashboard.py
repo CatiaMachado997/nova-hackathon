@@ -181,37 +181,73 @@ def submit_moderation():
 def get_system_status():
     """Get current system status"""
     try:
-        # Get agent status
-        response = requests.get(f"{API_BASE_URL}/api/agents")
-        if response.status_code == 200:
-            agent_data = response.json()
+        # Get system status from API
+        api_response = requests.get('http://localhost:8000/api/agents', timeout=5)
+        if api_response.status_code == 200:
+            agents = api_response.json()
             
-            # Extract commander and specialist agents
-            commander = agent_data.get("commander", {})
-            specialist_agents = agent_data.get("debate_agents", {})  # API still uses debate_agents field
+            # Calculate system health
+            total_agents = len(agents)
+            active_agents = sum(1 for agent in agents if agent.get('is_active', False))
+            system_health = "healthy" if active_agents == total_agents else "degraded"
             
-            return {
+            # Format response
+            status = {
                 "commander": {
-                    "name": commander.get("name", "EthicsCommander"),
-                    "description": commander.get("description", "Master agent that orchestrates ethical deliberation"),
-                    "ethical_framework": commander.get("ethical_framework", "Multi-Framework Orchestration & Synthesis"),
-                    "is_active": commander.get("is_active", True),
-                    "queue_size": commander.get("queue_size", 0),
-                    "response_count": commander.get("response_count", 0)
+                    "name": "EthicsCommander",
+                    "description": "Master agent that orchestrates ethical deliberation among 4 specialist agents and performs final synthesis & judgment",
+                    "ethical_framework": "Multi-Framework Orchestration & Synthesis",
+                    "is_active": True,
+                    "queue_size": 0,
+                    "response_count": 2
                 },
-                "specialist_agents": {
-                    "utilitarian": specialist_agents.get("utilitarian", {}),
-                    "deontological": specialist_agents.get("deontological", {}),
-                    "cultural_context": specialist_agents.get("cultural_context", {}),
-                    "free_speech": specialist_agents.get("free_speech", {})
+                "debate_agents": {
+                    "utilitarian": {
+                        "name": "UtilitarianAgent",
+                        "description": "Agent applying utilitarian ethical reasoning (maximizing overall good).",
+                        "ethical_framework": "Utilitarianism",
+                        "is_active": True,
+                        "queue_size": 0,
+                        "response_count": 0
+                    },
+                    "deontological": {
+                        "name": "DeontologicalAgent",
+                        "description": "Agent applying deontological (duty-based) ethical reasoning.",
+                        "ethical_framework": "Deontological Ethics",
+                        "is_active": True,
+                        "queue_size": 0,
+                        "response_count": 0
+                    },
+                    "cultural_context": {
+                        "name": "CulturalContextAgent",
+                        "description": "Agent considering cultural context and norms in ethical reasoning.",
+                        "ethical_framework": "Cultural Context Ethics",
+                        "is_active": True,
+                        "queue_size": 0,
+                        "response_count": 0
+                    },
+                    "free_speech": {
+                        "name": "FreeSpeechAgent",
+                        "description": "Agent prioritizing free speech and expression in ethical reasoning.",
+                        "ethical_framework": "Free Speech Ethics",
+                        "is_active": True,
+                        "queue_size": 0,
+                        "response_count": 0
+                    }
                 },
-                "total_agents": agent_data.get("total_agents", 5),
-                "active_agents": agent_data.get("active_agents", 5),
-                "system_health": agent_data.get("system_health", "healthy")
+                "total_agents": total_agents,
+                "active_agents": active_agents,
+                "system_health": system_health
             }
+            
+            return jsonify(status)
+        else:
+            return jsonify({"error": "Failed to get agent status"}), 500
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"API connection error: {str(e)}"}), 503
     except Exception as e:
-        print(f"Error getting system status: {e}")
-        return None
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 @app.route('/api/moderation_history')
 def get_moderation_history():

@@ -4,8 +4,7 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 import aiohttp
-from agents.base_agent import BaseAgent
-from api.schemas import AgentResponse, ContentModerationRequest
+from agents.base_agent import BaseAgent, AgentResponse
 
 logger = logging.getLogger(__name__)
 
@@ -18,63 +17,18 @@ class CulturalContextAgent(BaseAgent):
             description="Agent considering cultural context and norms in ethical reasoning.",
             ethical_framework="Cultural Context Ethics"
         )
-        self.agentos_session = None
-        self.jwt_token = None
-        self.agentos_url = "http://localhost:8001"  # Real AgentOS URL
-        self.agent_id = "cultural_context_agent"
         
     async def initialize(self):
-        """Initialize real AgentOS connection"""
-        try:
-            # Get JWT token from AgentOS
-            async with aiohttp.ClientSession() as session:
-                auth_response = await session.post(
-                    f"{self.agentos_url}/auth/login",
-                    json={
-                        "username": "ethiq_user",
-                        "password": "ethiq_password"
-                    }
-                )
-                if auth_response.status == 200:
-                    auth_data = await auth_response.json()
-                    self.jwt_token = auth_data.get("access_token")
-                    logger.info("✅ Authenticated with AgentOS")
-                else:
-                    logger.warning("⚠️ Could not authenticate with AgentOS, using mock mode")
-                    self.jwt_token = None
-                    
-            # Register agent with AgentOS
-            if self.jwt_token:
-                headers = {"Authorization": f"Bearer {self.jwt_token}"}
-                async with aiohttp.ClientSession() as session:
-                    register_response = await session.post(
-                        f"{self.agentos_url}/agents/register",
-                        headers=headers,
-                        json={
-                            "agent_id": self.agent_id,
-                            "name": "CulturalContextAgent",
-                            "description": "Cultural context ethical reasoning agent",
-                            "capabilities": ["ethical_analysis", "cultural_sensitivity"],
-                            "endpoint": "http://localhost:8000/agents/cultural_context"
-                        }
-                    )
-                    if register_response.status == 200:
-                        logger.info("✅ Registered with AgentOS")
-                    else:
-                        logger.warning("⚠️ Could not register with AgentOS")
-                        
-        except Exception as e:
-            logger.warning(f"⚠️ AgentOS initialization failed: {e}, using mock mode")
-            self.jwt_token = None
-            
+        """Initialize AgentOS connection"""
+        await self.initialize_agentos()
+        
     async def analyze_content(self, content: str, context: Dict[str, Any]) -> AgentResponse:
-        """Analyze content considering cultural context and norms"""
+        """Analyze content using cultural context ethical reasoning"""
         try:
             # Try AgentOS first
-            if self.agentos_session and self.jwt_token:
-                agentos_response = await self._analyze_with_agentos(content, context)
-                if agentos_response:
-                    return agentos_response
+            agentos_response = await self.analyze_with_agentos(content, context)
+            if agentos_response:
+                return agentos_response
             
             # Fallback to local analysis
             return await self._analyze_locally(content, context)
@@ -108,23 +62,53 @@ class CulturalContextAgent(BaseAgent):
     async def _analyze_locally(self, content: str, context: Dict[str, Any]) -> AgentResponse:
         """Analyze content using local cultural context reasoning"""
         # Cultural sensitivity analysis
-        cultural_keywords = [
-            "race", "ethnicity", "religion", "culture", "tradition", "custom",
-            "stereotype", "prejudice", "discrimination", "offensive", "insult"
+        content_lower = content.lower()
+        
+        # Check for cultural insensitivity
+        insensitive_keywords = [
+            "racist", "racism", "discriminatory", "stereotype", "offensive", "insult",
+            "hate speech", "bigotry", "prejudice", "xenophobic", "ethnocentric"
         ]
         
-        content_lower = content.lower()
-        cultural_score = sum(1 for keyword in cultural_keywords if keyword in content_lower)
+        insensitive_score = sum(1 for word in insensitive_keywords if word in content_lower)
         
-        # Cultural context analysis: respect for diverse perspectives
-        if cultural_score >= 2:
+        # Check for cultural respect
+        respectful_keywords = [
+            "diversity", "inclusion", "respect", "understanding", "tolerance",
+            "multicultural", "cultural exchange", "heritage", "tradition"
+        ]
+        
+        respectful_score = sum(1 for word in respectful_keywords if word in content_lower)
+        
+        # Cultural context analysis: balance cultural expression with sensitivity
+        if insensitive_score >= 2:
+            return AgentResponse(
+                agent_name=self.name,
+                ethical_framework=self.ethical_framework,
+                decision="REMOVE",
+                confidence=0.8,
+                reasoning="Content contains culturally insensitive or discriminatory language",
+                supporting_evidence=[f"Detected {insensitive_score} insensitive keywords"],
+                timestamp=datetime.now()
+            )
+        elif insensitive_score >= 1:
             return AgentResponse(
                 agent_name=self.name,
                 ethical_framework=self.ethical_framework,
                 decision="FLAG_FOR_REVIEW",
                 confidence=0.6,
-                reasoning="Content may be culturally insensitive",
-                supporting_evidence=[f"Detected {cultural_score} cultural context keywords"],
+                reasoning="Content may contain culturally insensitive elements, requires review",
+                supporting_evidence=[f"Detected {insensitive_score} potentially insensitive keywords"],
+                timestamp=datetime.now()
+            )
+        elif respectful_score >= 2:
+            return AgentResponse(
+                agent_name=self.name,
+                ethical_framework=self.ethical_framework,
+                decision="ALLOW",
+                confidence=0.9,
+                reasoning="Content promotes cultural understanding and respect",
+                supporting_evidence=[f"Detected {respectful_score} culturally respectful keywords"],
                 timestamp=datetime.now()
             )
         else:
@@ -132,16 +116,12 @@ class CulturalContextAgent(BaseAgent):
                 agent_name=self.name,
                 ethical_framework=self.ethical_framework,
                 decision="ALLOW",
-                confidence=0.7,
+                confidence=0.8,
                 reasoning="Content appears culturally appropriate",
                 supporting_evidence=["No clear cultural sensitivity issues detected"],
                 timestamp=datetime.now()
             )
-
+    
     async def shutdown(self):
         """Cleanup AgentOS connection"""
-        await super().shutdown()
-        if self.agentos_session:
-            await self.agentos_session.close()
-            self.agentos_session = None
-        self.jwt_token = None 
+        await super().shutdown() 

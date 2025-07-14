@@ -4,12 +4,13 @@ Manages the 4 specialist agents and performs final synthesis & judgment
 """
 
 import asyncio
+import json
 import logging
 import uuid
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime
-
-from .base_agent import BaseAgent, AgentResponse
+import aiohttp
+from agents.base_agent import BaseAgent, AgentResponse
 from .utilitarian_agent import UtilitarianAgent
 from .deontological_agent import DeontologicalAgent
 from .cultural_context_agent import CulturalContextAgent
@@ -39,7 +40,23 @@ class EthicsCommander(BaseAgent):
         }
         
         self.active_tasks = {}
-        self.deliberation_history = []
+        self.deliberation_history = {}
+    
+    async def initialize(self):
+        """Initialize AgentOS connection and all specialist agents"""
+        logger.info("EthicsCommander initializing AgentOS connection...")
+        await self.initialize_agentos()
+        
+        # Initialize all specialist agents with AgentOS
+        logger.info("Initializing specialist agents with AgentOS...")
+        for agent_name, agent in self.specialist_agents.items():
+            try:
+                await agent.initialize()
+                logger.info(f"✅ {agent_name} agent initialized with AgentOS")
+            except Exception as e:
+                logger.warning(f"⚠️ {agent_name} agent initialization failed: {e}")
+        
+        logger.info("EthicsCommander initialization complete")
     
     async def process_task(self, task: Dict[str, Any]) -> AgentResponse:
         """Process a moderation task by orchestrating the 4 specialist agents"""
@@ -68,11 +85,26 @@ class EthicsCommander(BaseAgent):
     
     async def deliberate(self, content: str, context: Dict[str, Any]) -> AgentResponse:
         """Conduct ethical deliberation on content"""
-        task = {
-            "content": content,
-            "context": context
-        }
-        return await self.process_task(task)
+        task_id = str(uuid.uuid4())
+        
+        # Conduct the full deliberation process
+        deliberation_result = await self._conduct_deliberation(content, context, task_id)
+        
+        # Create AgentResponse with specialist opinions included in supporting_evidence
+        # Convert specialist opinions to strings for supporting_evidence
+        evidence_strings = []
+        for opinion in deliberation_result["specialist_opinions"]:
+            evidence_strings.append(f"{opinion['agent']}: {opinion['decision']} ({opinion['confidence']:.2f}) - {opinion['reasoning'][:100]}...")
+        
+        return AgentResponse(
+            agent_name=self.name,
+            ethical_framework=self.ethical_framework,
+            decision=deliberation_result["final_decision"],
+            confidence=deliberation_result["confidence"],
+            reasoning=deliberation_result["reasoning"],
+            supporting_evidence=evidence_strings,  # Use converted strings
+            timestamp=datetime.now()
+        )
     
     async def _conduct_deliberation(self, content: str, context: Dict[str, Any], task_id: str) -> Dict[str, Any]:
         """Conduct the full ethical deliberation process with 4 specialist agents"""
@@ -93,7 +125,7 @@ class EthicsCommander(BaseAgent):
             "specialist_responses": specialist_responses,
             "final_decision": final_decision
         }
-        self.deliberation_history.append(deliberation_record)
+        self.deliberation_history[task_id] = deliberation_record
         
         return final_decision
     
@@ -191,76 +223,106 @@ class EthicsCommander(BaseAgent):
         for response in specialist_responses.values():
             all_evidence.extend(response.supporting_evidence)
         
+        # Convert specialist_opinions list to individual_contributions dict
+        individual_contributions = {}
+        for opinion in specialist_opinions:
+            individual_contributions[opinion["agent"]] = {
+                "framework": opinion["framework"],
+                "decision": opinion["decision"],
+                "confidence": opinion["confidence"],
+                "reasoning": opinion["reasoning"]
+            }
+        
         return {
             "final_decision": final_decision,
             "confidence": final_confidence,
             "reasoning": reasoning,
             "evidence": all_evidence,
             "specialist_opinions": specialist_opinions,
+            "individual_contributions": individual_contributions,
             "consensus_analysis": {
-                "total_agents": total_agents,
                 "consensus_decision": consensus_decision,
                 "consensus_count": consensus_count,
-                "decision_distribution": decision_counts,
-                "average_confidence": avg_confidence
+                "total_agents": total_agents,
+                "decision_distribution": decision_counts
             }
         }
     
     def _generate_synthesis_reasoning(self, specialist_opinions: List[Dict], final_decision: str, 
                                     final_confidence: float, consensus_count: int, total_agents: int) -> str:
-        """Generate comprehensive reasoning for the final decision"""
+        """Generate comprehensive synthesis reasoning"""
         
-        reasoning = f"EthicsCommander synthesis complete. Final decision: {final_decision} with {final_confidence:.2f} confidence. "
+        reasoning_parts = []
+        reasoning_parts.append(f"EthicsCommander synthesis complete. Final decision: {final_decision} with {final_confidence:.2f} confidence.")
         
         # Add consensus information
         if consensus_count == total_agents:
-            reasoning += f"All {total_agents} specialist agents unanimously agree on {final_decision}. "
+            reasoning_parts.append(f"All {total_agents} specialist agents unanimously agree on {final_decision}.")
         elif consensus_count >= total_agents * 0.75:
-            reasoning += f"Strong consensus reached: {consensus_count} out of {total_agents} agents recommend {final_decision}. "
+            reasoning_parts.append(f"Strong consensus reached: {consensus_count} out of {total_agents} agents recommend {final_decision}.")
         elif consensus_count >= total_agents * 0.5:
-            reasoning += f"Majority consensus: {consensus_count} out of {total_agents} agents recommend {final_decision}. "
+            reasoning_parts.append(f"Majority consensus reached: {consensus_count} out of {total_agents} agents recommend {final_decision}.")
         else:
-            reasoning += f"No clear consensus among agents. "
+            reasoning_parts.append(f"No clear consensus reached. {consensus_count} out of {total_agents} agents recommend {final_decision}.")
         
-        # Add individual specialist perspectives
-        reasoning += "Specialist perspectives: "
+        # Add specialist perspectives
+        reasoning_parts.append("Specialist perspectives:")
         for opinion in specialist_opinions:
-            reasoning += f"{opinion['agent']} ({opinion['framework']}): {opinion['decision']} "
-            reasoning += f"({opinion['confidence']:.2f}) - {opinion['reasoning'][:100]}... "
+            reasoning_parts.append(f"{opinion['agent']} ({opinion['framework']}): {opinion['decision']} ({opinion['confidence']:.2f}) - {opinion['reasoning']}")
         
-        # Add synthesis explanation
-        reasoning += f"Final synthesis: The {final_decision} decision reflects a balanced consideration of "
-        reasoning += "utilitarian consequences, deontological principles, cultural context, and free speech values. "
+        # Add final synthesis
+        reasoning_parts.append(f"Final synthesis: The {final_decision} decision reflects a balanced consideration of utilitarian consequences, deontological principles, cultural context, and free speech values.")
         
         if final_confidence >= 0.8:
-            reasoning += "High confidence in this decision due to strong specialist agreement. "
+            reasoning_parts.append("High confidence in this decision due to strong specialist agreement.")
         elif final_confidence >= 0.6:
-            reasoning += "Moderate confidence with some specialist disagreement resolved through synthesis. "
+            reasoning_parts.append("Moderate confidence in this decision with some specialist disagreement.")
         else:
-            reasoning += "Lower confidence due to significant specialist disagreement - human review recommended. "
+            reasoning_parts.append("Lower confidence in this decision due to significant specialist disagreement.")
         
-        return reasoning
+        return " ".join(reasoning_parts)
     
     async def get_agent_status(self) -> Dict[str, Any]:
-        """Get status of all agents"""
+        """Get comprehensive status of all agents"""
         status = {
             "commander": self.get_status(),
-            "specialist_agents": {}
+            "specialists": {}
         }
         
         for agent_name, agent in self.specialist_agents.items():
-            status["specialist_agents"][agent_name] = agent.get_status()
+            status["specialists"][agent_name] = agent.get_status()
         
         return status
     
     async def shutdown(self):
-        """Gracefully shutdown all agents"""
-        logger.info(f"{self.name} shutting down all specialist agents")
+        """Shutdown all agents gracefully"""
+        logger.info("EthicsCommander shutting down all agents...")
         
         # Shutdown specialist agents
         for agent_name, agent in self.specialist_agents.items():
-            await agent.shutdown()
+            try:
+                await agent.shutdown()
+                logger.info(f"✅ {agent_name} agent shutdown complete")
+            except Exception as e:
+                logger.warning(f"⚠️ {agent_name} agent shutdown failed: {e}")
         
         # Shutdown commander
         await super().shutdown()
-        logger.info("All agents shut down") 
+        logger.info("EthicsCommander shutdown complete")
+    
+    def _create_error_response(self, error_message: str) -> AgentResponse:
+        """Create an error response when analysis fails"""
+        return AgentResponse(
+            agent_name=self.name,
+            ethical_framework=self.ethical_framework,
+            decision="FLAG_FOR_REVIEW",
+            confidence=0.3,
+            reasoning=f"EthicsCommander analysis failed: {error_message}",
+            supporting_evidence=["Analysis error occurred"],
+            timestamp=datetime.now()
+        )
+    
+    async def _analyze_locally(self, content: str, context: Dict[str, Any]) -> AgentResponse:
+        """Fallback local analysis when AgentOS is unavailable"""
+        # This should not be called for EthicsCommander as it always delegates to specialists
+        return self._create_error_response("EthicsCommander requires specialist agents for analysis") 

@@ -4,8 +4,7 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 import aiohttp
-from agents.base_agent import BaseAgent
-from api.schemas import AgentResponse, ContentModerationRequest
+from agents.base_agent import BaseAgent, AgentResponse
 
 logger = logging.getLogger(__name__)
 
@@ -18,63 +17,18 @@ class UtilitarianAgent(BaseAgent):
             description="Agent applying utilitarian ethical reasoning (maximizing overall good).",
             ethical_framework="Utilitarianism"
         )
-        self.agentos_session = None
-        self.jwt_token = None
-        self.agentos_url = "http://localhost:8001"  # Real AgentOS URL
-        self.agent_id = "utilitarian_agent"
         
     async def initialize(self):
-        """Initialize real AgentOS connection"""
-        try:
-            # Get JWT token from AgentOS
-            async with aiohttp.ClientSession() as session:
-                auth_response = await session.post(
-                    f"{self.agentos_url}/auth/login",
-                    json={
-                        "username": "ethiq_user",
-                        "password": "ethiq_password"
-                    }
-                )
-                if auth_response.status == 200:
-                    auth_data = await auth_response.json()
-                    self.jwt_token = auth_data.get("access_token")
-                    logger.info("✅ Authenticated with AgentOS")
-                else:
-                    logger.warning("⚠️ Could not authenticate with AgentOS, using mock mode")
-                    self.jwt_token = None
-                    
-            # Register agent with AgentOS
-            if self.jwt_token:
-                headers = {"Authorization": f"Bearer {self.jwt_token}"}
-                async with aiohttp.ClientSession() as session:
-                    register_response = await session.post(
-                        f"{self.agentos_url}/agents/register",
-                        headers=headers,
-                        json={
-                            "agent_id": self.agent_id,
-                            "name": "UtilitarianAgent",
-                            "description": "Utilitarian ethical reasoning agent",
-                            "capabilities": ["ethical_analysis", "utility_calculation"],
-                            "endpoint": "http://localhost:8000/agents/utilitarian"
-                        }
-                    )
-                    if register_response.status == 200:
-                        logger.info("✅ Registered with AgentOS")
-                    else:
-                        logger.warning("⚠️ Could not register with AgentOS")
-                        
-        except Exception as e:
-            logger.warning(f"⚠️ AgentOS initialization failed: {e}, using mock mode")
-            self.jwt_token = None
-            
+        """Initialize AgentOS connection"""
+        await self.initialize_agentos()
+        
     async def analyze_content(self, content: str, context: Dict[str, Any]) -> AgentResponse:
         """Analyze content using utilitarian ethical reasoning"""
         try:
             # Try AgentOS first
-            if self.agentos_session and self.jwt_token:
-                agentos_response = await self._analyze_with_agentos(content, context)
-                if agentos_response:
-                    return agentos_response
+            agentos_response = await self.analyze_with_agentos(content, context)
+            if agentos_response:
+                return agentos_response
             
             # Fallback to local analysis
             return await self._analyze_locally(content, context)
@@ -147,11 +101,7 @@ class UtilitarianAgent(BaseAgent):
                 supporting_evidence=["No health misinformation patterns found"],
                 timestamp=datetime.now()
             )
-
+    
     async def shutdown(self):
         """Cleanup AgentOS connection"""
-        await super().shutdown()
-        if self.agentos_session:
-            await self.agentos_session.close()
-            self.agentos_session = None
-        self.jwt_token = None 
+        await super().shutdown() 

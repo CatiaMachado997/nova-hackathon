@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pydantic import BaseModel, Field
 import os
+import aiohttp
 from tools.training_data_loader import TrainingDataLoader, get_agent_examples, create_agent_prompt
 
 try:
@@ -47,7 +48,7 @@ class AgentResponse(BaseModel):
 
 class BaseAgent(ABC):
     """
-    Abstract base class for all ethical deliberation agents
+    Abstract base class for all ethical deliberation agents with AgentOS integration
     """
     
     def __init__(self, name: str, description: str, ethical_framework: str):
@@ -58,6 +59,150 @@ class BaseAgent(ABC):
         self.message_queue = asyncio.Queue()
         self.response_history = []
         
+        # AgentOS Integration
+        self.agentos_url = "http://localhost:8001"
+        self.jwt_token = None
+        self.agentos_session = None
+        self.agent_id = f"{name.lower().replace('agent', '')}_agent"
+        self.registered_with_agentos = False
+        
+    async def initialize_agentos(self):
+        """Initialize AgentOS connection and register agent"""
+        try:
+            # Create session
+            self.agentos_session = aiohttp.ClientSession()
+            
+            # Authenticate with AgentOS
+            auth_response = await self.agentos_session.post(
+                f"{self.agentos_url}/auth/login",
+                json={
+                    "username": "ethiq_user",
+                    "password": "ethiq_password"
+                }
+            )
+            
+            if auth_response.status == 200:
+                auth_data = await auth_response.json()
+                self.jwt_token = auth_data.get("access_token")
+                logger.info(f"✅ {self.name} authenticated with AgentOS")
+                
+                # Register agent
+                await self._register_with_agentos()
+            else:
+                logger.warning(f"⚠️ {self.name} could not authenticate with AgentOS, using mock mode")
+                self.jwt_token = None
+                
+        except Exception as e:
+            logger.warning(f"⚠️ {self.name} AgentOS connection failed: {e}, using mock mode")
+            self.jwt_token = None
+            
+    async def _register_with_agentos(self):
+        """Register agent with AgentOS"""
+        if not self.jwt_token or not self.agentos_session:
+            return
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.jwt_token}"}
+            
+            register_data = {
+                "agent_id": self.agent_id,
+                "name": self.name,
+                "description": self.description,
+                "capabilities": ["ethical_analysis", "content_moderation"],
+                "endpoint": f"http://localhost:8000/agents/{self.agent_id}",
+                "metadata": {
+                    "ethical_framework": self.ethical_framework,
+                    "agent_type": self.__class__.__name__
+                }
+            }
+            
+            response = await self.agentos_session.post(
+                f"{self.agentos_url}/agents/register",
+                headers=headers,
+                json=register_data
+            )
+            
+            if response.status == 200:
+                self.registered_with_agentos = True
+                logger.info(f"✅ {self.name} registered with AgentOS")
+            else:
+                logger.warning(f"⚠️ {self.name} could not register with AgentOS")
+                
+        except Exception as e:
+            logger.error(f"Error registering {self.name}: {e}")
+            
+    async def analyze_with_agentos(self, content: str, context: Dict[str, Any]) -> Optional[AgentResponse]:
+        """Analyze content using AgentOS"""
+        if not self.jwt_token or not self.agentos_session or not self.registered_with_agentos:
+            return None
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.jwt_token}"}
+            
+            request_data = {
+                "content": content,
+                "context": context,
+                "agent_type": self.__class__.__name__,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            response = await self.agentos_session.post(
+                f"{self.agentos_url}/agents/{self.agent_id}/analyze",
+                headers=headers,
+                json=request_data
+            )
+            
+            if response.status == 200:
+                result = await response.json()
+                logger.info(f"✅ {self.name} received AgentOS analysis")
+                
+                # Convert AgentOS response to AgentResponse
+                return AgentResponse(
+                    agent_name=self.name,
+                    reasoning=result.get("reasoning", ""),
+                    decision=result.get("decision", "FLAG_FOR_REVIEW"),
+                    confidence=result.get("confidence", 0.5),
+                    ethical_framework=self.ethical_framework,
+                    supporting_evidence=result.get("evidence", []),
+                    timestamp=datetime.now()
+                )
+            else:
+                logger.warning(f"⚠️ {self.name} AgentOS analysis request failed")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error in AgentOS analysis for {self.name}: {e}")
+            return None
+            
+    async def broadcast_to_agentos(self, event_type: str, event_data: Dict[str, Any]):
+        """Broadcast event to AgentOS"""
+        if not self.jwt_token or not self.agentos_session:
+            return
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.jwt_token}"}
+            
+            event_payload = {
+                "event_type": event_type,
+                "data": event_data,
+                "timestamp": datetime.now().isoformat(),
+                "source": self.name
+            }
+            
+            response = await self.agentos_session.post(
+                f"{self.agentos_url}/events/broadcast",
+                headers=headers,
+                json=event_payload
+            )
+            
+            if response.status == 200:
+                logger.info(f"✅ {self.name} broadcasted {event_type} event to AgentOS")
+            else:
+                logger.warning(f"⚠️ {self.name} failed to broadcast {event_type} event")
+                
+        except Exception as e:
+            logger.error(f"Error broadcasting event from {self.name}: {e}")
+    
     @abstractmethod
     async def process_task(self, task: Dict[str, Any]) -> AgentResponse:
         """
@@ -69,6 +214,20 @@ class BaseAgent(ABC):
     async def deliberate(self, content: str, context: Dict[str, Any]) -> AgentResponse:
         """
         Perform ethical deliberation on content
+        """
+        pass
+    
+    @abstractmethod
+    async def _analyze_locally(self, content: str, context: Dict[str, Any]) -> AgentResponse:
+        """
+        Perform local analysis when AgentOS is unavailable
+        """
+        pass
+    
+    @abstractmethod
+    def _create_error_response(self, error_message: str) -> AgentResponse:
+        """
+        Create an error response when analysis fails
         """
         pass
     
@@ -98,12 +257,33 @@ class BaseAgent(ABC):
             "ethical_framework": self.ethical_framework,
             "is_active": self.is_active,
             "queue_size": self.message_queue.qsize(),
-            "response_count": len(self.response_history)
+            "response_count": len(self.response_history),
+            "agentos_connected": self.registered_with_agentos
         }
     
     async def shutdown(self):
         """Gracefully shutdown the agent"""
         self.is_active = False
+        
+        # Shutdown AgentOS connection
+        if self.registered_with_agentos and self.jwt_token and self.agentos_session:
+            try:
+                headers = {"Authorization": f"Bearer {self.jwt_token}"}
+                await self.agentos_session.post(
+                    f"{self.agentos_url}/agents/{self.agent_id}/shutdown",
+                    headers=headers
+                )
+                logger.info(f"✅ {self.name} shutdown via AgentOS")
+            except Exception as e:
+                logger.warning(f"Error during AgentOS shutdown for {self.name}: {e}")
+        
+        if self.agentos_session:
+            await self.agentos_session.close()
+            self.agentos_session = None
+            
+        self.jwt_token = None
+        self.registered_with_agentos = False
+        
         logger.info(f"{self.name} shutting down")
     
     def __str__(self):
@@ -130,25 +310,18 @@ class LLMEthicsAgent(BaseAgent):
             if not openai or not self.openai_api_key:
                 raise RuntimeError("OpenAI or API key not available")
             openai.api_key = self.openai_api_key
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=512,
                 temperature=0.2,
             )
-            return response.choices[0].message["content"]
-        elif self.llm_provider == "gemini":
-            if not genai or not self.google_api_key:
-                raise RuntimeError("Google Generative AI or API key not available")
-            genai.configure(api_key=self.google_api_key)
-            model = genai.GenerativeModel("gemini-pro")
-            response = model.generate_content(prompt)
-            return response.text
-        else:
-            # Mock mode for local/dev - provide more sophisticated mock responses
-            return self._generate_mock_response(prompt)
+            content = response.choices[0].message.content
+            return content if content else "No response generated"
+        # Fallback: mock mode
+        return "[MOCK] No real LLM provider configured or available."
 
-    def _generate_mock_response(self, prompt: str, context: dict = None) -> str:
+    def _generate_mock_response(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
         """Generate a more sophisticated mock response based on content and context analysis"""
         # Extract content from prompt (look for "Content to analyze:" pattern)
         content = ""
@@ -181,8 +354,7 @@ class LLMEthicsAgent(BaseAgent):
 
         # Lowercase content for pattern matching
         content_lower = content.lower()
-        context = context or {}
-        context_str = str(context).lower()
+        context_str = str(context or {}).lower()
 
         # Satire detection
         if any(p in content_lower or p in context_str for p in satire_patterns):
@@ -198,102 +370,71 @@ class LLMEthicsAgent(BaseAgent):
 
         # Health misinformation detection
         if any(p in content_lower for p in health_misinfo_patterns):
-            # If vulnerable audience, increase severity
-            if context.get("vulnerable_audience", False):
-                return "REMOVE: Health misinformation detected and vulnerable audience present. Immediate removal."
-            else:
-                return "FLAG_FOR_REVIEW: Health misinformation detected. Recommend review."
+            return "FLAG_FOR_REVIEW: Content contains potential health misinformation. Recommend review."
 
-        # Context-aware moderation
-        if context.get("vulnerable_audience", False):
-            if "joke" in content_lower or "satire" in content_lower:
-                return "FLAG_FOR_REVIEW: Potentially sensitive joke for vulnerable audience. Recommend review."
-            # Otherwise, increase scrutiny
-            if any(word in content_lower for word in ["suicide", "self-harm", "kill yourself"]):
-                return "REMOVE: Harmful content detected for vulnerable audience."
-
-        # Platform-based tuning
-        platform = context.get("platform", "").lower()
-        if platform in ["private_message", "closed_group"] and not context.get("vulnerable_audience", False):
-            return "FLAG_FOR_REVIEW: Content in private/closed context. Recommend review."
-
-        # Default: allow
-        return "ALLOW: No harmful or misleading content detected."
+        # Default response
+        return "ALLOW: Content appears to be appropriate and does not violate ethical guidelines."
 
     async def deliberate(self, content: str, context: Dict[str, Any]) -> AgentResponse:
-        prompt = self.build_prompt(content)
-        llm_output = self.call_llm(prompt)
-        
-        # Improved decision parsing with confidence calculation
-        decision, confidence = self._parse_decision_and_confidence(llm_output, content, context)
-        
-        return AgentResponse(
-            agent_name=self.name,
-            reasoning=llm_output,
-            decision=decision,
-            confidence=confidence,
-            ethical_framework=self.ethical_framework,
-            supporting_evidence=self._extract_evidence(content, context),
-        )
+        """Perform ethical deliberation using LLM"""
+        try:
+            # Try AgentOS first
+            agentos_response = await self.analyze_with_agentos(content, context)
+            if agentos_response:
+                return agentos_response
+            
+            # Fallback to local analysis
+            return await self._analyze_locally(content, context)
+            
+        except Exception as e:
+            logger.error(f"{self.name} deliberation error: {e}")
+            return self._create_error_response(str(e))
 
-    def _parse_decision_and_confidence(self, llm_output: str, content: str, context: dict = None) -> tuple[str, float]:
-        """Parse decision and calculate confidence from LLM output, with nuanced logic"""
-        llm_lower = llm_output.lower()
-        context = context or {}
-        # Determine decision
-        if "remove" in llm_lower:
+    def _parse_decision_and_confidence(self, llm_output: str, content: str, context: Optional[Dict[str, Any]] = None) -> tuple[str, float]:
+        """Parse decision and confidence from LLM output"""
+        llm_output_lower = llm_output.lower()
+        
+        # Extract decision
+        if "remove" in llm_output_lower:
             decision = "REMOVE"
-        elif "flag" in llm_lower or "review" in llm_lower:
+        elif "flag" in llm_output_lower or "review" in llm_output_lower:
             decision = "FLAG_FOR_REVIEW"
         else:
             decision = "ALLOW"
-        # Confidence tuning
-        base_confidence = 0.7
-        # Satire lowers confidence
-        if "satire" in llm_lower or "joke" in llm_lower:
-            base_confidence -= 0.2
-        # Trusted source increases confidence for ALLOW
-        if "trusted" in llm_lower or "peer-reviewed" in llm_lower or "cdc" in llm_lower or "who" in llm_lower:
-            if decision == "ALLOW":
-                base_confidence += 0.2
-        # Vulnerable audience increases confidence for REMOVE/FLAG
-        if context.get("vulnerable_audience", False):
-            if decision in ["REMOVE", "FLAG_FOR_REVIEW"]:
-                base_confidence += 0.15
-        # Dangerous advice = high confidence
-        if "dangerous" in llm_lower or "immediate removal" in llm_lower:
-            base_confidence = 0.95
-        # Clamp confidence
-        confidence = min(max(base_confidence, 0.0), 0.99)
-        return decision, confidence
+        
+        # Calculate confidence based on content analysis
+        confidence = 0.7  # Default confidence
+        
+        # Adjust confidence based on content patterns
+        content_lower = content.lower()
+        if any(word in content_lower for word in ["vaccine", "covid", "health", "medical"]):
+            confidence += 0.1
+        if any(word in content_lower for word in ["dangerous", "harmful", "fake", "hoax"]):
+            confidence += 0.1
+        if any(word in content_lower for word in ["government", "conspiracy", "trust"]):
+            confidence += 0.05
+            
+        return decision, min(confidence, 0.95)
 
-    def _extract_evidence(self, content: str, context: dict = None) -> list:
-        """Extract evidence for moderation decision, including satire, trusted sources, and context"""
+    def _extract_evidence(self, content: str, context: Optional[Dict[str, Any]] = None) -> list:
+        """Extract supporting evidence from content"""
         evidence = []
         content_lower = content.lower()
-        context = context or {}
-        context_str = str(context).lower()
-        # Satire
-        if any(p in content_lower or p in context_str for p in ["satire", "parody", "joke", "humor"]):
-            evidence.append("Satire/humor detected in content/context.")
-        # Trusted source
-        if any(p in content_lower or p in context_str for p in ["cdc", "who", "peer-reviewed", "journal", "official guidance"]):
-            evidence.append("Trusted health authority or peer-reviewed source cited.")
-        # Health misinformation
-        if any(p in content_lower for p in ["vaccine is dangerous", "causes autism", "covid is a hoax", "drink bleach", "miracle cure", "plandemic", "anti-vax", "5g causes covid"]):
-            evidence.append("Health misinformation pattern detected.")
-        # Dangerous advice
-        if any(p in content_lower for p in ["drink bleach", "inject disinfectant", "stop taking medication", "ignore medical advice"]):
-            evidence.append("Dangerous medical advice detected.")
-        # Vulnerable audience
-        if context.get("vulnerable_audience", False):
-            evidence.append("Vulnerable audience present in context.")
-        # Platform
-        if context.get("platform", "") in ["private_message", "closed_group"]:
-            evidence.append("Content posted in private or closed group context.")
+        
+        # Health-related evidence
+        health_keywords = ["vaccine", "covid", "health", "medical", "treatment"]
+        if any(keyword in content_lower for keyword in health_keywords):
+            evidence.append("Health-related content detected")
+            
+        # Misinformation indicators
+        misinfo_keywords = ["fake", "hoax", "conspiracy", "dangerous", "harmful"]
+        if any(keyword in content_lower for keyword in misinfo_keywords):
+            evidence.append("Potential misinformation indicators detected")
+            
         return evidence
 
     async def process_task(self, task: Dict[str, Any]) -> AgentResponse:
+        """Process a task using LLM"""
         content = task.get("content", "")
         context = task.get("context", {})
         return await self.deliberate(content, context) 

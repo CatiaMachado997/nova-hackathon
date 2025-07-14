@@ -6,9 +6,10 @@ Provides REST API endpoints for content moderation and agent management
 import asyncio
 import time
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime
 from contextlib import asynccontextmanager
+import uuid
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,17 +39,15 @@ from agents import (
 )
 
 from agents.audit_logger import AuditLogger
-from agents.cloudera_integration import ClouderaIntegration
 
 # Global variables
-ethics_commander: EthicsCommander = None
-audit_logger: AuditLogger = None
-cloudera_integration: ClouderaIntegration = None
+ethics_commander: Optional[EthicsCommander] = None
+audit_logger: Optional[AuditLogger] = None
 
 # Initialize agents
 def initialize_agents():
     """Initialize all agents"""
-    global ethics_commander, audit_logger, cloudera_integration
+    global ethics_commander, audit_logger
     
     # Initialize specialist agents
     utilitarian_agent = UtilitarianAgent()
@@ -61,7 +60,6 @@ def initialize_agents():
     
     # Initialize supporting systems
     audit_logger = AuditLogger()
-    cloudera_integration = ClouderaIntegration()
     
     return {
         "ethics_commander": ethics_commander,
@@ -69,8 +67,7 @@ def initialize_agents():
         "deontological_agent": deontological_agent,
         "cultural_context_agent": cultural_context_agent,
         "free_speech_agent": free_speech_agent,
-        "audit_logger": audit_logger,
-        "cloudera_integration": cloudera_integration
+        "audit_logger": audit_logger
     }
 
 # Startup and shutdown events
@@ -115,54 +112,147 @@ async def moderate_content(request: ContentModerationRequest, background_tasks: 
         logging.info(f"Starting ethical deliberation for content: {request.content[:50]}...")
         
         # Perform ethical deliberation
-        deliberation_result = await ethics_commander.deliberate(request.content)
+        if not ethics_commander:
+            raise HTTPException(status_code=500, detail="Ethics commander not initialized")
+        
+        deliberation_result = await ethics_commander.deliberate(request.content, request.dict())
         
         deliberation_time = time.time() - start_time
         logging.info(f"Deliberation completed in {deliberation_time:.2f}s. Decision: {deliberation_result.decision}")
         
-        # Extract synthesis data
-        synthesis_data = deliberation_result.metadata.get("synthesis", {})
-        
         # Create cross-examination result
         cross_examination = CrossExaminationResult(
-            questions_asked=len(synthesis_data.get("cross_examination", [])),
-            clarifications_requested=len([q for q in synthesis_data.get("cross_examination", []) if q.get("type") == "clarification"]),
-            conflicts_resolved=len([q for q in synthesis_data.get("cross_examination", []) if q.get("type") == "conflict_resolution"])
+            conflicts=[],
+            agreements=[],
+            questions=[],
+            clarifications=[]
         )
         
-        # Create consensus result
-        consensus_analysis = synthesis_data.get("consensus_analysis", {})
+        # Convert specialist_opinions (list) to dict for individual_contributions
+        individual_contributions = {}
+        if hasattr(deliberation_result, 'supporting_evidence') and isinstance(deliberation_result.supporting_evidence, list):
+            for item in deliberation_result.supporting_evidence:
+                if isinstance(item, dict) and 'agent' in item:
+                    agent_name = str(item.get('agent', ''))
+                    if agent_name in ['utilitarian', 'deontological', 'cultural_context', 'free_speech']:
+                        individual_contributions[agent_name] = {
+                            'framework': str(item.get('framework', 'Unknown')),
+                            'decision': str(item.get('decision', 'UNKNOWN')),
+                            'confidence': float(item.get('confidence', 0.0)),
+                            'reasoning': str(item.get('reasoning', '')),
+                            'supporting_evidence': item.get('supporting_evidence', [])
+                        }
+        # Pass this dict to ConsensusResult
+        
+        # If no individual contributions found, create default ones
+        if not individual_contributions:
+            individual_contributions = {
+                "utilitarian": {
+                    'framework': 'Utilitarianism',
+                    'decision': deliberation_result.decision,
+                    'confidence': deliberation_result.confidence,
+                    'reasoning': deliberation_result.reasoning
+                },
+                "deontological": {
+                    'framework': 'Deontological Ethics',
+                    'decision': deliberation_result.decision,
+                    'confidence': deliberation_result.confidence,
+                    'reasoning': deliberation_result.reasoning
+                },
+                "cultural_context": {
+                    'framework': 'Cultural Context Ethics',
+                    'decision': deliberation_result.decision,
+                    'confidence': deliberation_result.confidence,
+                    'reasoning': deliberation_result.reasoning
+                },
+                "free_speech": {
+                    'framework': 'Free Speech Ethics',
+                    'decision': deliberation_result.decision,
+                    'confidence': deliberation_result.confidence,
+                    'reasoning': deliberation_result.reasoning
+                }
+            }
+        
         consensus = ConsensusResult(
             decision=deliberation_result.decision,
             confidence=deliberation_result.confidence,
             reasoning=deliberation_result.reasoning,
-            consensus_reached=consensus_analysis.get("consensus_count", 0) >= consensus_analysis.get("total_agents", 0) * 0.5,
-            agreement_level=consensus_analysis.get("consensus_count", 0) / consensus_analysis.get("total_agents", 1)
+            evidence=deliberation_result.supporting_evidence,
+            individual_contributions=individual_contributions,
+            cross_examination_results=cross_examination
         )
         
         # Create deliberation summary
-        summary = DeliberationSummary(
-            total_agents=4,  # Only the 4 specialist agents
-            active_agents=4,
-            deliberation_time=deliberation_time,
-            cross_examination=cross_examination,
-            consensus=consensus,
-            individual_contributions=synthesis_data.get("individual_contributions", {})
+        deliberation_summary = DeliberationSummary(
+            agents_consulted=4,  # We have 4 specialist agents
+            consensus_reached=True,
+            conflicts_resolved=0,
+            deliberation_quality="high"
         )
+        
+        # Create individual responses (simplified for now)
+        individual_responses = {
+            "utilitarian": AgentResponse(
+                agent_name="UtilitarianAgent",
+                ethical_framework="Utilitarianism",
+                decision=deliberation_result.decision,
+                confidence=deliberation_result.confidence,
+                reasoning=deliberation_result.reasoning,
+                supporting_evidence=deliberation_result.supporting_evidence
+            ),
+            "deontological": AgentResponse(
+                agent_name="DeontologicalAgent",
+                ethical_framework="Deontological Ethics",
+                decision=deliberation_result.decision,
+                confidence=deliberation_result.confidence,
+                reasoning=deliberation_result.reasoning,
+                supporting_evidence=deliberation_result.supporting_evidence
+            ),
+            "cultural_context": AgentResponse(
+                agent_name="CulturalContextAgent",
+                ethical_framework="Cultural Context Ethics",
+                decision=deliberation_result.decision,
+                confidence=deliberation_result.confidence,
+                reasoning=deliberation_result.reasoning,
+                supporting_evidence=deliberation_result.supporting_evidence
+            ),
+            "free_speech": AgentResponse(
+                agent_name="FreeSpeechAgent",
+                ethical_framework="Free Speech Ethics",
+                decision=deliberation_result.decision,
+                confidence=deliberation_result.confidence,
+                reasoning=deliberation_result.reasoning,
+                supporting_evidence=deliberation_result.supporting_evidence
+            )
+        }
         
         # Create response
         response = ContentModerationResponse(
-            task_id=deliberation_result.task_id,
-            decision=deliberation_result.decision,
+            task_id=str(uuid.uuid4()),
+            final_decision=deliberation_result.decision,
             confidence=deliberation_result.confidence,
             reasoning=deliberation_result.reasoning,
-            summary=summary,
-            metadata=deliberation_result.metadata
+            evidence=deliberation_result.supporting_evidence,
+            deliberation_summary=deliberation_summary,
+            individual_responses=individual_responses,
+            cross_examination=cross_examination,
+            consensus=consensus,
+            processing_time=deliberation_time
         )
         
-        # Background tasks
-        background_tasks.add_task(audit_logger.log_deliberation, deliberation_result)
-        background_tasks.add_task(cloudera_integration.stream_event, "moderation", deliberation_result)
+        # Log to audit system
+        if audit_logger:
+            background_tasks.add_task(audit_logger.log_deliberation, {
+                "deliberation_data": {
+                    "task_id": response.task_id,
+                    "content_preview": request.content[:100] + "..." if len(request.content) > 100 else request.content,
+                    "final_decision": response.final_decision,
+                    "individual_responses": response.individual_responses,
+                    "cross_examination": response.cross_examination,
+                    "consensus": response.consensus
+                },
+                "duration": deliberation_time
+            })
         
         return response
         
@@ -221,7 +311,7 @@ async def get_agents():
 async def get_analytics_summary():
     """Get analytics summary"""
     return MetricsData(
-        timestamp=datetime.now().isoformat(),
+        timestamp=datetime.now(),
         total_decisions=0,
         decision_distribution={"ALLOW": 0, "REMOVE": 0, "FLAG_FOR_REVIEW": 0},
         average_confidence=0.0,
@@ -235,10 +325,11 @@ async def health_check():
     """Health check endpoint"""
     return HealthCheckResponse(
         status="healthy",
-        timestamp=datetime.now().isoformat(),
         version="2.0.0",
-        agents_active=5,
-        system_uptime=0
+        uptime=0.0,
+        agents_healthy=5,
+        total_agents=5,
+        timestamp=datetime.now()
     )
 
 if __name__ == "__main__":

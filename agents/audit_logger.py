@@ -72,6 +72,21 @@ class AuditLogger(BaseAgent):
         """Deliberate on content (not used for audit logging)"""
         raise NotImplementedError("AuditLogger does not perform ethical deliberation")
     
+    async def _analyze_locally(self, content: str, context: Dict[str, Any]) -> AgentResponse:
+        """Local analysis (not used for audit logging)"""
+        raise NotImplementedError("AuditLogger does not perform local analysis")
+    
+    def _create_error_response(self, error_message: str) -> AgentResponse:
+        """Create error response for audit logging failures"""
+        return AgentResponse(
+            agent_name=self.name,
+            reasoning=f"Audit logging error: {error_message}",
+            decision="ERROR",
+            confidence=0.0,
+            ethical_framework=self.ethical_framework,
+            supporting_evidence=[f"Error: {error_message}"]
+        )
+    
     async def log_deliberation(self, task: Dict[str, Any]) -> AgentResponse:
         """Log a complete deliberation process"""
         
@@ -337,9 +352,9 @@ class AuditLogger(BaseAgent):
             elif len(set(decisions)) > 1:
                 conflict_count += 1
         
-        quality_metrics["average_agents_per_deliberation"] = total_agents / len(logs)
-        quality_metrics["consensus_rate"] = consensus_count / len(logs)
-        quality_metrics["conflict_rate"] = conflict_count / len(logs)
+        quality_metrics["average_agents_per_deliberation"] = int(total_agents / len(logs))
+        quality_metrics["consensus_rate"] = int(consensus_count / len(logs))
+        quality_metrics["conflict_rate"] = int(conflict_count / len(logs))
         
         return quality_metrics
     

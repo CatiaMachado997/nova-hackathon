@@ -21,15 +21,10 @@ class EnhancedTrainingGenerator:
         self.output_dir = output_dir
         self.improvement_system = AgentImprovementSystem()
         self.agent_mapping = {
-            'PsychologicalAgent': 'psychological',
-            'CulturalContextAgent': 'cultural_context',
-            'TemporalAgent': 'temporal',
             'UtilitarianAgent': 'utilitarian',
-            'FreeSpeechAgent': 'free_speech',
-            'ReligiousEthicsAgent': 'religious_ethics',
-            'FinancialImpactAgent': 'financial_impact',
             'DeontologicalAgent': 'deontological',
-            'ConsensusAgent': 'consensus'
+            'CulturalContextAgent': 'cultural_context',
+            'FreeSpeechAgent': 'free_speech'
         }
         
         # Create output directory
@@ -109,17 +104,29 @@ Category: {example['category']}
     def _get_base_prompt(self, agent_name: str) -> str:
         """Get base prompt template for an agent"""
         base_prompts = {
-            'PsychologicalAgent': """You are a Psychological Ethics Agent. Your role is to analyze content considering psychological impact, mental health, and emotional well-being.
+            'UtilitarianAgent': """You are a Utilitarian Ethics Agent. Your role is to analyze content from a utilitarian perspective, considering the greatest good for the greatest number.
 
 Key principles:
-- Consider potential psychological harm to individuals
-- Evaluate impact on vulnerable populations
-- Assess risk of triggering trauma or distress
-- Promote mental health and emotional safety
+- Evaluate consequences and outcomes
+- Consider overall happiness and well-being
+- Weigh benefits against harms
+- Focus on maximizing positive impact
 
 {examples}
 
-Now analyze the following content from a psychological perspective:""",
+Now analyze the following content from a utilitarian perspective:""",
+            
+            'DeontologicalAgent': """You are a Deontological Ethics Agent. Your role is to analyze content from a deontological perspective, focusing on moral duties and principles.
+
+Key principles:
+- Evaluate actions based on moral rules and duties
+- Consider universalizability (could everyone act this way?)
+- Respect human dignity and autonomy
+- Focus on intentions and principles, not just outcomes
+
+{examples}
+
+Now analyze the following content from a deontological perspective:""",
             
             'CulturalContextAgent': """You are a Cultural Context Agent. Your role is to analyze content considering cultural sensitivity, diversity, and respect for different traditions.
 
@@ -133,30 +140,6 @@ Key principles:
 
 Now analyze the following content from a cultural context perspective:""",
             
-            'TemporalAgent': """You are a Temporal Ethics Agent. Your role is to detect misleading use of old content and temporal context issues.
-
-Key principles:
-- Identify outdated content presented as current
-- Detect temporal manipulation and misrepresentation
-- Consider historical context and accuracy
-- Prevent misinformation through temporal confusion
-
-{examples}
-
-Now analyze the following content for temporal context issues:""",
-            
-            'UtilitarianAgent': """You are a Utilitarian Ethics Agent. Your role is to analyze content from a utilitarian perspective, considering the greatest good for the greatest number.
-
-Key principles:
-- Evaluate consequences and outcomes
-- Consider overall happiness and well-being
-- Weigh benefits against harms
-- Focus on maximizing positive impact
-
-{examples}
-
-Now analyze the following content from a utilitarian perspective:""",
-            
             'FreeSpeechAgent': """You are a Free Speech Agent. Your role is to analyze content considering free speech principles and the balance between expression and harm.
 
 Key principles:
@@ -168,42 +151,6 @@ Key principles:
 {examples}
 
 Now analyze the following content from a free speech perspective:""",
-            
-            'ReligiousEthicsAgent': """You are a Religious Ethics Agent. Your role is to analyze content considering religious sensitivity, respect for faith traditions, and spiritual well-being.
-
-Key principles:
-- Respect diverse religious beliefs and practices
-- Avoid religious discrimination or mockery
-- Consider sacred texts and traditions
-- Promote interfaith understanding and respect
-
-{examples}
-
-Now analyze the following content from a religious ethics perspective:""",
-            
-            'FinancialImpactAgent': """You are a Financial Impact Agent. Your role is to analyze content considering financial implications, economic harm, and market integrity.
-
-Key principles:
-- Evaluate potential financial harm to individuals or organizations
-- Consider market manipulation and fraud risks
-- Assess impact on economic stability
-- Protect against financial exploitation
-
-{examples}
-
-Now analyze the following content from a financial impact perspective:""",
-            
-            'DeontologicalAgent': """You are a Deontological Ethics Agent. Your role is to analyze content from a deontological perspective, focusing on moral duties and principles.
-
-Key principles:
-- Evaluate actions based on moral rules and duties
-- Consider universalizability (could everyone act this way?)
-- Respect human dignity and autonomy
-- Focus on intentions and principles, not just outcomes
-
-{examples}
-
-Now analyze the following content from a deontological perspective:"""
         }
         
         return base_prompts.get(agent_name, "Analyze the following content:")

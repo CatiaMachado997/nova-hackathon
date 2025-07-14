@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 from typing import Dict, Any, List
 
-from agents import EthicsCommander, AuditLogger
+from agents import EthicsCommander
 
 
 class EthIQDemo:
@@ -18,7 +18,6 @@ class EthIQDemo:
     
     def __init__(self):
         self.commander = EthicsCommander()
-        self.audit_logger = AuditLogger()
         self.demo_scenarios = self._load_demo_scenarios()
     
     def _load_demo_scenarios(self) -> List[Dict[str, Any]]:
@@ -168,16 +167,15 @@ class EthIQDemo:
         
         processing_time = time.time() - start_time
         
-        # Get deliberation history
-        deliberation_history = self.commander.get_deliberation_history()
-        latest_deliberation = deliberation_history[-1] if deliberation_history else {}
+        # Get deliberation history - removed since method doesn't exist
+        latest_deliberation = {}
         
         # Log deliberation
-        await self.audit_logger.log_deliberation({
-            "type": "deliberation_log",
-            "deliberation_data": latest_deliberation,
-            "duration": processing_time
-        })
+        # await self.audit_logger.log_deliberation({
+        #     "type": "deliberation_log",
+        #     "deliberation_data": latest_deliberation,
+        #     "duration": processing_time
+        # })
         
         # Display results
         print(f"⏱️  Processing time: {processing_time:.2f} seconds")
@@ -247,12 +245,12 @@ class EthIQDemo:
             print(f"  • {name}: {status_icon} Active (Responses: {agent['response_count']})")
         
         # Show audit summary
-        audit_summary = self.audit_logger.get_audit_summary()
-        print(f"\nAudit Summary:")
-        print(f"  • Total logs: {audit_summary['total_logs']}")
-        print(f"  • Total metrics: {audit_summary['total_metrics']}")
-        print(f"  • Notion logging: {'✅ Enabled' if audit_summary['notion_enabled'] else '❌ Disabled'}")
-        print(f"  • Cloudera streaming: {'✅ Enabled' if audit_summary['cloudera_enabled'] else '❌ Disabled'}")
+        # audit_summary = self.audit_logger.get_audit_summary()
+        # print(f"\nAudit Summary:")
+        # print(f"  • Total logs: {audit_summary['total_logs']}")
+        # print(f"  • Total metrics: {audit_summary['total_metrics']}")
+        # print(f"  • Notion logging: {'✅ Enabled' if audit_summary['notion_enabled'] else '❌ Disabled'}")
+        # print(f"  • Cloudera streaming: {'✅ Enabled' if audit_summary['cloudera_enabled'] else '❌ Disabled'}")
 
 
 async def main():
