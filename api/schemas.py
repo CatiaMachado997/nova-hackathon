@@ -158,3 +158,12 @@ class HealthCheckResponse(BaseModel):
     agents_healthy: int = Field(..., description="Number of healthy agents")
     total_agents: int = Field(..., description="Total number of agents")
     timestamp: datetime = Field(default_factory=datetime.now, description="When health check was performed")
+
+
+class BatchModerationRequest(BaseModel):
+    """Batch request schema for content moderation"""
+    requests: List[ContentModerationRequest] = Field(..., description="List of content moderation requests")
+
+class BatchModerationResponse(BaseModel):
+    """Batch response schema for content moderation"""
+    results: List[ContentModerationResponse] = Field(..., description="List of content moderation responses")

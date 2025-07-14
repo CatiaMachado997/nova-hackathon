@@ -115,6 +115,15 @@ def history_page():
     """History page"""
     return render_template('dashboard.html')
 
+@app.route('/results')
+def results_page():
+    """Comprehensive moderation results page"""
+    try:
+        history = fetch_moderation_history()
+    except Exception as e:
+        history = []
+    return render_template('results.html', history=history)
+
 @app.route('/integrations')
 def integrations_page():
     """Integrations page"""

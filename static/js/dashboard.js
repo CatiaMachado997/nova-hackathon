@@ -3,6 +3,10 @@
 let socket = null;
 let updateInterval = null;
 
+let lastGoodSystemStatus = null;
+let lastGoodAnalytics = null;
+let lastUpdated = null;
+
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
     initializeSocket();
@@ -69,40 +73,87 @@ function updateConnectionStatus(connected) {
 
 // Update system status
 function updateSystemStatus(data) {
-    // Update commander status
-    if (data.commander) {
-        updateAgentStatus('commander', data.commander);
+    // Only update if data is valid (at least one agent, no error)
+    if (data && data.total_agents > 0 && !data.error) {
+        lastGoodSystemStatus = data;
+        lastUpdated = Date.now();
+        clearAgentOSUnavailable();
+        // Update commander status
+        if (data.commander) {
+            updateAgentStatus('commander', data.commander);
+        }
+        
+        // Update specialist agents
+        if (data.debate_agents) {
+            Object.keys(data.debate_agents).forEach(agentKey => {
+                updateAgentStatus(agentKey, data.debate_agents[agentKey]);
+            });
+        }
+        
+        // Update system health
+        const healthElement = document.getElementById('system-health');
+        if (healthElement) {
+            healthElement.textContent = data.system_health || 'Unknown';
+            healthElement.className = `badge ${getHealthBadgeClass(data.system_health)}`;
+        }
+        
+        // Update total agents
+        const totalAgentsElement = document.getElementById('total-agents');
+        if (totalAgentsElement) {
+            totalAgentsElement.textContent = data.total_agents || 0;
+        }
+        
+        // Update active agents
+        const activeAgentsElement = document.getElementById('active-agents');
+        if (activeAgentsElement) {
+            activeAgentsElement.textContent = data.active_agents || 0;
+        }
+        
+        // Update consensus rate
+        const consensusRate = data.total_agents > 0 ? Math.round((data.active_agents / data.total_agents) * 100) : 0;
+        document.getElementById('consensus-rate').textContent = `${consensusRate}%`;
+    } else if (lastGoodSystemStatus) {
+        setAgentOSUnavailable('AgentOS unavailable. Showing last known agent status.');
+        // Re-render UI with last good data
+        data = lastGoodSystemStatus;
+        // Update commander status
+        if (data.commander) {
+            updateAgentStatus('commander', data.commander);
+        }
+        
+        // Update specialist agents
+        if (data.debate_agents) {
+            Object.keys(data.debate_agents).forEach(agentKey => {
+                updateAgentStatus(agentKey, data.debate_agents[agentKey]);
+            });
+        }
+        
+        // Update system health
+        const healthElement = document.getElementById('system-health');
+        if (healthElement) {
+            healthElement.textContent = data.system_health || 'Unknown';
+            healthElement.className = `badge ${getHealthBadgeClass(data.system_health)}`;
+        }
+        
+        // Update total agents
+        const totalAgentsElement = document.getElementById('total-agents');
+        if (totalAgentsElement) {
+            totalAgentsElement.textContent = data.total_agents || 0;
+        }
+        
+        // Update active agents
+        const activeAgentsElement = document.getElementById('active-agents');
+        if (activeAgentsElement) {
+            activeAgentsElement.textContent = data.active_agents || 0;
+        }
+        
+        // Update consensus rate
+        const consensusRate = data.total_agents > 0 ? Math.round((data.active_agents / data.total_agents) * 100) : 0;
+        document.getElementById('consensus-rate').textContent = `${consensusRate}%`;
+    } else {
+        setAgentOSUnavailable('AgentOS unavailable. No agent data available.');
     }
-    
-    // Update specialist agents
-    if (data.debate_agents) {
-        Object.keys(data.debate_agents).forEach(agentKey => {
-            updateAgentStatus(agentKey, data.debate_agents[agentKey]);
-        });
-    }
-    
-    // Update system health
-    const healthElement = document.getElementById('system-health');
-    if (healthElement) {
-        healthElement.textContent = data.system_health || 'Unknown';
-        healthElement.className = `badge ${getHealthBadgeClass(data.system_health)}`;
-    }
-    
-    // Update total agents
-    const totalAgentsElement = document.getElementById('total-agents');
-    if (totalAgentsElement) {
-        totalAgentsElement.textContent = data.total_agents || 0;
-    }
-    
-    // Update active agents
-    const activeAgentsElement = document.getElementById('active-agents');
-    if (activeAgentsElement) {
-        activeAgentsElement.textContent = data.active_agents || 0;
-    }
-    
-    // Update consensus rate
-    const consensusRate = data.total_agents > 0 ? Math.round((data.active_agents / data.total_agents) * 100) : 0;
-    document.getElementById('consensus-rate').textContent = `${consensusRate}%`;
+    updateLastUpdated();
 }
 
 // Update agent status
@@ -144,39 +195,83 @@ function updateAgentStatus(agentKey, agentData) {
 
 // Update analytics
 function updateAnalytics(data) {
-    // Update total decisions
-    const totalDecisionsElement = document.getElementById('total-decisions');
-    if (totalDecisionsElement) {
-        totalDecisionsElement.textContent = data.total_decisions || 0;
+    if (data && data.total_decisions !== undefined && !data.error) {
+        lastGoodAnalytics = data;
+        lastUpdated = Date.now();
+        clearAgentOSUnavailable();
+        // Update total decisions
+        const totalDecisionsElement = document.getElementById('total-decisions');
+        if (totalDecisionsElement) {
+            totalDecisionsElement.textContent = data.total_decisions || 0;
+        }
+        
+        // Update decision distribution
+        if (data.decision_distribution) {
+            Object.keys(data.decision_distribution).forEach(decision => {
+                const element = document.getElementById(`decision-${decision.toLowerCase()}`);
+                if (element) {
+                    element.textContent = data.decision_distribution[decision] || 0;
+                }
+            });
+        }
+        
+        // Update average confidence
+        const avgConfidenceElement = document.getElementById('avg-confidence');
+        if (avgConfidenceElement) {
+            avgConfidenceElement.textContent = ((data.average_confidence || 0) * 100).toFixed(1) + '%';
+        }
+        
+        // Update agent performance
+        if (data.agent_performance) {
+            Object.keys(data.agent_performance).forEach(agentKey => {
+                const performance = data.agent_performance[agentKey];
+                const element = document.getElementById(`performance-${agentKey}`);
+                if (element) {
+                    element.textContent = performance.avg_confidence ? 
+                        (performance.avg_confidence * 100).toFixed(1) + '%' : 'N/A';
+                }
+            });
+        }
+    } else if (lastGoodAnalytics) {
+        setAgentOSUnavailable('AgentOS unavailable. Showing last known analytics.');
+        data = lastGoodAnalytics;
+        // Update total decisions
+        const totalDecisionsElement = document.getElementById('total-decisions');
+        if (totalDecisionsElement) {
+            totalDecisionsElement.textContent = data.total_decisions || 0;
+        }
+        
+        // Update decision distribution
+        if (data.decision_distribution) {
+            Object.keys(data.decision_distribution).forEach(decision => {
+                const element = document.getElementById(`decision-${decision.toLowerCase()}`);
+                if (element) {
+                    element.textContent = data.decision_distribution[decision] || 0;
+                }
+            });
+        }
+        
+        // Update average confidence
+        const avgConfidenceElement = document.getElementById('avg-confidence');
+        if (avgConfidenceElement) {
+            avgConfidenceElement.textContent = ((data.average_confidence || 0) * 100).toFixed(1) + '%';
+        }
+        
+        // Update agent performance
+        if (data.agent_performance) {
+            Object.keys(data.agent_performance).forEach(agentKey => {
+                const performance = data.agent_performance[agentKey];
+                const element = document.getElementById(`performance-${agentKey}`);
+                if (element) {
+                    element.textContent = performance.avg_confidence ? 
+                        (performance.avg_confidence * 100).toFixed(1) + '%' : 'N/A';
+                }
+            });
+        }
+    } else {
+        setAgentOSUnavailable('AgentOS unavailable. No analytics data available.');
     }
-    
-    // Update decision distribution
-    if (data.decision_distribution) {
-        Object.keys(data.decision_distribution).forEach(decision => {
-            const element = document.getElementById(`decision-${decision.toLowerCase()}`);
-            if (element) {
-                element.textContent = data.decision_distribution[decision] || 0;
-            }
-        });
-    }
-    
-    // Update average confidence
-    const avgConfidenceElement = document.getElementById('avg-confidence');
-    if (avgConfidenceElement) {
-        avgConfidenceElement.textContent = ((data.average_confidence || 0) * 100).toFixed(1) + '%';
-    }
-    
-    // Update agent performance
-    if (data.agent_performance) {
-        Object.keys(data.agent_performance).forEach(agentKey => {
-            const performance = data.agent_performance[agentKey];
-            const element = document.getElementById(`performance-${agentKey}`);
-            if (element) {
-                element.textContent = performance.avg_confidence ? 
-                    (performance.avg_confidence * 100).toFixed(1) + '%' : 'N/A';
-            }
-        });
-    }
+    updateLastUpdated();
 }
 
 // Update deliberation status
@@ -256,6 +351,25 @@ function displayModerationResult(result) {
     const modal = document.getElementById('moderation-result-modal');
     const resultElement = document.getElementById('moderation-result');
     if (modal && resultElement) {
+        let agentDetails = '';
+        if (result.individual_responses) {
+            agentDetails += '<hr><h6>Agent Responses</h6><div class="row">';
+            for (const [agent, resp] of Object.entries(result.individual_responses)) {
+                agentDetails += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">${agent}</h6>
+                                <span class="badge bg-primary">${resp.decision}</span>
+                                <small class="d-block">Confidence: ${(resp.confidence * 100).toFixed(1)}%</small>
+                                <div><strong>Reasoning:</strong><br>${resp.reasoning}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            agentDetails += '</div>';
+        }
         resultElement.innerHTML = `
             <button class="close-btn" onclick="closeModerationModal()" aria-label="Close">&times;</button>
             <div class="alert alert-${getDecisionAlertClass(result.final_decision)}">
@@ -265,12 +379,32 @@ function displayModerationResult(result) {
                 <p><strong>Task ID:</strong> ${result.task_id}</p>
                 <p><strong>Processing Time:</strong> ${result.processing_time.toFixed(2)}s</p>
             </div>
+            ${agentDetails}
         `;
         modal.classList.add('active');
     } else {
         // Fallback: show in legacy div
         const legacy = document.getElementById('moderation-result-legacy');
         if (legacy) {
+            let agentDetails = '';
+            if (result.individual_responses) {
+                agentDetails += '<hr><h6>Agent Responses</h6><div class="row">';
+                for (const [agent, resp] of Object.entries(result.individual_responses)) {
+                    agentDetails += `
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">${agent}</h6>
+                                    <span class="badge bg-primary">${resp.decision}</span>
+                                    <small class="d-block">Confidence: ${(resp.confidence * 100).toFixed(1)}%</small>
+                                    <div><strong>Reasoning:</strong><br>${resp.reasoning}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                agentDetails += '</div>';
+            }
             legacy.innerHTML = `
                 <div class="alert alert-${getDecisionAlertClass(result.final_decision)}">
                     <h5>Decision: ${result.final_decision}</h5>
@@ -279,6 +413,7 @@ function displayModerationResult(result) {
                     <p><strong>Task ID:</strong> ${result.task_id}</p>
                     <p><strong>Processing Time:</strong> ${result.processing_time.toFixed(2)}s</p>
                 </div>
+                ${agentDetails}
             `;
             legacy.scrollIntoView({ behavior: 'smooth' });
         }
@@ -289,6 +424,70 @@ function displayModerationResult(result) {
 function refreshData() {
     fetchSystemStatus();
     fetchAnalytics();
+}
+
+// Show or hide a user-facing error message
+function setDashboardError(message) {
+    let errorDiv = document.getElementById('dashboard-error');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'dashboard-error';
+        errorDiv.className = 'alert alert-warning text-center';
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '0';
+        errorDiv.style.left = '0';
+        errorDiv.style.width = '100%';
+        errorDiv.style.zIndex = '2000';
+        document.body.prepend(errorDiv);
+    }
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+
+function clearDashboardError() {
+    const errorDiv = document.getElementById('dashboard-error');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+    }
+}
+
+function setAgentOSUnavailable(message) {
+    let errorDiv = document.getElementById('agentos-unavailable');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'agentos-unavailable';
+        errorDiv.className = 'alert alert-danger text-center';
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '0';
+        errorDiv.style.left = '0';
+        errorDiv.style.width = '100%';
+        errorDiv.style.zIndex = '2100';
+        document.body.prepend(errorDiv);
+    }
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+
+function clearAgentOSUnavailable() {
+    const errorDiv = document.getElementById('agentos-unavailable');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+    }
+}
+
+function updateLastUpdated() {
+    let tsDiv = document.getElementById('last-updated');
+    if (!tsDiv) {
+        tsDiv = document.createElement('div');
+        tsDiv.id = 'last-updated';
+        tsDiv.className = 'text-end text-muted';
+        tsDiv.style.fontSize = '0.9rem';
+        tsDiv.style.margin = '8px 0';
+        document.querySelector('.container-fluid').prepend(tsDiv);
+    }
+    if (lastUpdated) {
+        tsDiv.textContent = 'Last updated: ' + new Date(lastUpdated).toLocaleString();
+    }
 }
 
 // Fetch system status
@@ -322,8 +521,10 @@ async function fetchSystemStatus() {
         });
         
         updateSystemStatus(statusData);
+        clearDashboardError(); // Success, clear any error
     } catch (error) {
         console.error('Error fetching system status:', error);
+        setDashboardError('Unable to fetch agent status. The dashboard may be out of sync.');
     }
 }
 
@@ -333,8 +534,10 @@ async function fetchAnalytics() {
         const response = await fetch('/api/analytics/summary');
         const data = await response.json();
         updateAnalytics(data);
+        clearDashboardError(); // Success, clear any error
     } catch (error) {
         console.error('Error fetching analytics:', error);
+        setDashboardError('Unable to fetch analytics data. The dashboard may be out of sync.');
     }
 }
 
@@ -371,7 +574,7 @@ function startPeriodicUpdates() {
     updateInterval = setInterval(() => {
         fetchSystemStatus();
         fetchAnalytics();
-    }, 5000); // Update every 5 seconds
+    }, 15000); // Update every 15 seconds
 }
 
 // Stop periodic updates

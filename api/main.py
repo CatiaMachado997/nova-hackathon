@@ -27,7 +27,9 @@ from api.schemas import (
     AuditLogEntry,
     MetricsData,
     ErrorResponse,
-    HealthCheckResponse
+    HealthCheckResponse,
+    BatchModerationRequest,  # <-- add
+    BatchModerationResponse  # <-- add
 )
 
 from agents import (
@@ -39,6 +41,7 @@ from agents import (
 )
 
 from agents.audit_logger import AuditLogger
+from agents.agentos_integration import RealAgentOSIntegration
 
 # Global variables
 ethics_commander: Optional[EthicsCommander] = None
@@ -103,6 +106,9 @@ app.add_middleware(
 )
 
 # API Routes
+# In-memory history store
+moderation_history = []
+
 @app.post("/api/moderate", response_model=ContentModerationResponse)
 async def moderate_content(request: ContentModerationRequest, background_tasks: BackgroundTasks):
     """Main content moderation endpoint"""
@@ -211,16 +217,145 @@ async def moderate_content(request: ContentModerationRequest, background_tasks: 
                 },
                 "duration": deliberation_time
             })
-        
+        # Store in history
+        moderation_history.append(response.dict())
         return response
         
     except Exception as e:
         logging.error(f"Error during moderation: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/moderate/batch", response_model=BatchModerationResponse)
+async def batch_moderate_content(request: BatchModerationRequest, background_tasks: BackgroundTasks):
+    """Batch content moderation endpoint"""
+    responses = []
+    for req in request.requests:
+        # Reuse the single moderation logic
+        try:
+            # Perform ethical deliberation
+            if not ethics_commander:
+                raise HTTPException(status_code=500, detail="Ethics commander not initialized")
+            start_time = time.time()
+            deliberation_result = await ethics_commander.deliberate(req.content, req.dict())
+            deliberation_time = time.time() - start_time
+            cross_examination = CrossExaminationResult(
+                conflicts=[], agreements=[], questions=[], clarifications=[]
+            )
+            individual_contributions = deliberation_result.get('individual_contributions', {})
+            consensus = ConsensusResult(
+                decision=deliberation_result['final_decision'],
+                confidence=deliberation_result['confidence'],
+                reasoning=deliberation_result['reasoning'],
+                evidence=deliberation_result.get('evidence', []),
+                individual_contributions=individual_contributions,
+                cross_examination_results=cross_examination
+            )
+            deliberation_summary = DeliberationSummary(
+                agents_consulted=4,
+                consensus_reached=True,
+                conflicts_resolved=0,
+                deliberation_quality="high"
+            )
+            individual_responses = {
+                "utilitarian": AgentResponse(
+                    agent_name="UtilitarianAgent",
+                    ethical_framework="Utilitarianism",
+                    decision=deliberation_result['final_decision'],
+                    confidence=deliberation_result['confidence'],
+                    reasoning=deliberation_result['reasoning'],
+                    supporting_evidence=deliberation_result.get('evidence', [])
+                ),
+                "deontological": AgentResponse(
+                    agent_name="DeontologicalAgent",
+                    ethical_framework="Deontological Ethics",
+                    decision=deliberation_result['final_decision'],
+                    confidence=deliberation_result['confidence'],
+                    reasoning=deliberation_result['reasoning'],
+                    supporting_evidence=deliberation_result.get('evidence', [])
+                ),
+                "cultural_context": AgentResponse(
+                    agent_name="CulturalContextAgent",
+                    ethical_framework="Cultural Context Ethics",
+                    decision=deliberation_result['final_decision'],
+                    confidence=deliberation_result['confidence'],
+                    reasoning=deliberation_result['reasoning'],
+                    supporting_evidence=deliberation_result.get('evidence', [])
+                ),
+                "free_speech": AgentResponse(
+                    agent_name="FreeSpeechAgent",
+                    ethical_framework="Free Speech Ethics",
+                    decision=deliberation_result['final_decision'],
+                    confidence=deliberation_result['confidence'],
+                    reasoning=deliberation_result['reasoning'],
+                    supporting_evidence=deliberation_result.get('evidence', [])
+                )
+            }
+            response = ContentModerationResponse(
+                task_id=str(uuid.uuid4()),
+                final_decision=deliberation_result['final_decision'],
+                confidence=deliberation_result['confidence'],
+                reasoning=deliberation_result['reasoning'],
+                evidence=deliberation_result.get('evidence', []),
+                deliberation_summary=deliberation_summary,
+                individual_responses=individual_responses,
+                cross_examination=cross_examination,
+                consensus=consensus,
+                processing_time=deliberation_time
+            )
+            if audit_logger:
+                background_tasks.add_task(audit_logger.log_deliberation, {
+                    "deliberation_data": {
+                        "task_id": response.task_id,
+                        "content_preview": req.content[:100] + "..." if len(req.content) > 100 else req.content,
+                        "final_decision": response.final_decision,
+                        "individual_responses": response.individual_responses,
+                        "cross_examination": response.cross_examination,
+                        "consensus": response.consensus
+                    },
+                    "duration": deliberation_time
+                })
+            responses.append(response)
+        except Exception as e:
+            logging.error(f"Error during batch moderation: {e}")
+            # Optionally, append an error response or skip
+            continue
+    return BatchModerationResponse(results=responses)
+
+@app.get("/api/history")
+async def get_moderation_history():
+    """Return the list of moderation results (history)"""
+    return moderation_history
+
 @app.get("/api/agents", response_model=List[AgentStatus])
 async def get_agents():
-    """Get status of all agents"""
+    """Get status of all agents, using AgentOS if available"""
+    try:
+        integration = RealAgentOSIntegration()
+        await integration.initialize()
+        # Try to get all agents from AgentOS
+        headers = {"Authorization": f"Bearer {integration.jwt_token}"} if integration.jwt_token else {}
+        if integration.session and integration.jwt_token:
+            response = await integration.session.get(f"{integration.agentos_url}/agents", headers=headers)
+            if response.status == 200:
+                agent_list = await response.json()
+                # Map AgentOS agent data to AgentStatus schema if needed
+                agents = []
+                for agent in agent_list:
+                    agents.append(AgentStatus(
+                        name=agent.get("name", "UnknownAgent"),
+                        description=agent.get("description", ""),
+                        ethical_framework=agent.get("ethical_framework", ""),
+                        is_active=agent.get("is_active", True),
+                        queue_size=agent.get("queue_size", 0),
+                        response_count=agent.get("response_count", 0)
+                    ))
+                await integration.close()
+                return agents
+    except Exception as e:
+        # Log and fall back to mock data
+        import logging
+        logging.warning(f"AgentOS integration failed: {e}, falling back to mock data")
+    # Fallback: mock data
     agents = [
         AgentStatus(
             name="EthicsCommander",
