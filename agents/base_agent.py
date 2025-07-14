@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 import os
 import aiohttp
 from tools.training_data_loader import TrainingDataLoader, get_agent_examples, create_agent_prompt
+from agents.auth_utils import get_agentos_jwt_token
 
 try:
     import openai
@@ -61,7 +62,7 @@ class BaseAgent(ABC):
         
         # AgentOS Integration
         self.agentos_url = os.environ.get("AGENTOS_URL", "http://localhost:8001")
-        self.jwt_token = None
+        self.jwt_token = os.environ.get("AGENTOS_JWT_TOKEN")
         self.agentos_session = None
         self.agent_id = f"{name.lower().replace('agent', '')}_agent"
         self.registered_with_agentos = False
@@ -71,27 +72,13 @@ class BaseAgent(ABC):
         try:
             # Create session
             self.agentos_session = aiohttp.ClientSession()
-            
-            # Authenticate with AgentOS
-            auth_response = await self.agentos_session.post(
-                f"{self.agentos_url}/auth/login",
-                json={
-                    "username": "ethiq_user",
-                    "password": "ethiq_password"
-                }
-            )
-            
-            if auth_response.status == 200:
-                auth_data = await auth_response.json()
-                self.jwt_token = auth_data.get("access_token")
-                logger.info(f"✅ {self.name} authenticated with AgentOS")
-                
-                # Register agent
+
+            # Always use the shared utility for JWT
+            self.jwt_token = await get_agentos_jwt_token(self.agentos_session, self.agentos_url)
+            if self.jwt_token:
                 await self._register_with_agentos()
             else:
                 logger.warning(f"⚠️ {self.name} could not authenticate with AgentOS, using mock mode")
-                self.jwt_token = None
-                
         except Exception as e:
             logger.warning(f"⚠️ {self.name} AgentOS connection failed: {e}, using mock mode")
             self.jwt_token = None

@@ -9,6 +9,7 @@ import logging
 from typing import Dict, Any, List, Optional
 import aiohttp
 from datetime import datetime
+from agents.auth_utils import get_agentos_jwt_token
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class RealAgentOSIntegration:
     def __init__(self):
         import os
         self.agentos_url = os.environ.get("AGENTOS_URL", "http://localhost:8001")
-        self.jwt_token = None
+        self.jwt_token = os.environ.get("AGENTOS_JWT_TOKEN")
         self.registered_agents = {}
         self.session = None
         
@@ -25,24 +26,13 @@ class RealAgentOSIntegration:
         """Initialize connection to real AgentOS"""
         try:
             self.session = aiohttp.ClientSession()
-            
-            # Authenticate with AgentOS
-            auth_response = await self.session.post(
-                f"{self.agentos_url}/auth/login",
-                json={
-                    "username": "ethiq_user",
-                    "password": "ethiq_password"
-                }
-            )
-            
-            if auth_response.status == 200:
-                auth_data = await auth_response.json()
-                self.jwt_token = auth_data.get("access_token")
+
+            # Always use the shared utility for JWT
+            self.jwt_token = await get_agentos_jwt_token(self.session, self.agentos_url)
+            if self.jwt_token:
                 logger.info("✅ Authenticated with real AgentOS")
             else:
                 logger.warning("⚠️ Could not authenticate with AgentOS, using mock mode")
-                self.jwt_token = None
-                
         except Exception as e:
             logger.warning(f"⚠️ AgentOS connection failed: {e}, using mock mode")
             self.jwt_token = None
