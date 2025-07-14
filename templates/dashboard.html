@@ -297,10 +297,17 @@
             </div>
         </div>
 
-        <!-- Moderation Result -->
+        <!-- Moderation Result Modal -->
+        <div id="moderation-result-modal">
+            <div id="moderation-result">
+                <button class="close-btn" onclick="closeModerationModal()" aria-label="Close">&times;</button>
+                <!-- Moderation result content will be injected here by JS -->
+            </div>
+        </div>
+        <!-- (Legacy) Moderation Result Inline -->
         <div class="row mt-4">
             <div class="col-12">
-                <div id="moderation-result"></div>
+                <div id="moderation-result-legacy"></div>
             </div>
         </div>
     </div>
@@ -308,5 +315,20 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="/static/js/dashboard.js"></script>
+    <script>
+    // Modal close logic
+    function closeModerationModal() {
+        document.getElementById('moderation-result-modal').classList.remove('active');
+    }
+    // Close modal on background click
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('moderation-result-modal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeModerationModal();
+            });
+        }
+    });
+    </script>
 </body>
 </html> 

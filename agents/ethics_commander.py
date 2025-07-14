@@ -83,28 +83,15 @@ class EthicsCommander(BaseAgent):
         self.response_history.append(response)
         return response
     
-    async def deliberate(self, content: str, context: Dict[str, Any]) -> AgentResponse:
+    async def deliberate(self, content: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Conduct ethical deliberation on content"""
         task_id = str(uuid.uuid4())
         
         # Conduct the full deliberation process
         deliberation_result = await self._conduct_deliberation(content, context, task_id)
         
-        # Create AgentResponse with specialist opinions included in supporting_evidence
-        # Convert specialist opinions to strings for supporting_evidence
-        evidence_strings = []
-        for opinion in deliberation_result["specialist_opinions"]:
-            evidence_strings.append(f"{opinion['agent']}: {opinion['decision']} ({opinion['confidence']:.2f}) - {opinion['reasoning'][:100]}...")
-        
-        return AgentResponse(
-            agent_name=self.name,
-            ethical_framework=self.ethical_framework,
-            decision=deliberation_result["final_decision"],
-            confidence=deliberation_result["confidence"],
-            reasoning=deliberation_result["reasoning"],
-            supporting_evidence=evidence_strings,  # Use converted strings
-            timestamp=datetime.now()
-        )
+        # Return the full deliberation result with individual_contributions
+        return deliberation_result
     
     async def _conduct_deliberation(self, content: str, context: Dict[str, Any], task_id: str) -> Dict[str, Any]:
         """Conduct the full ethical deliberation process with 4 specialist agents"""

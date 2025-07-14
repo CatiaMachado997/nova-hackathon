@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class RealAgentOSIntegration:
     """Real GenAI AgentOS Integration for EthIQ"""
     
-    def __init__(self):
-        self.agentos_url = "http://localhost:8001"
+    def __init__(self, agentos_url: str = "ws://4b262edbb4ce.ngrok-free.app/ws"):
+        self.agentos_url = agentos_url
         self.jwt_token = None
         self.registered_agents = {}
         self.session = None
@@ -255,12 +255,12 @@ class RealAgentOSIntegration:
             return {"status": "error", "error": str(e)}
 
 # Global instance
-agentos_integration = RealAgentOSIntegration() 
+agentos_integration = RealAgentOSIntegration("ws://4b262edbb4ce.ngrok-free.app/ws") 
 
 async def initialize_agentos_protocol(agents: Dict[str, Any]) -> bool:
     """Initialize AgentOS Protocol integration"""
     try:
-        integration = RealAgentOSIntegration()
+        integration = RealAgentOSIntegration("ws://4b262edbb4ce.ngrok-free.app/ws")
         await integration.initialize()
         return True
     except Exception as e:
@@ -270,7 +270,7 @@ async def initialize_agentos_protocol(agents: Dict[str, Any]) -> bool:
 async def orchestrate_with_agentos(content: str, context: Dict[str, Any]) -> Dict[str, Any]:
     """Orchestrate content moderation with AgentOS"""
     try:
-        integration = RealAgentOSIntegration()
+        integration = RealAgentOSIntegration("ws://4b262edbb4ce.ngrok-free.app/ws")
         await integration.initialize()
         return await integration.orchestrate_moderation(content, context)
     except Exception as e:
@@ -280,7 +280,7 @@ async def orchestrate_with_agentos(content: str, context: Dict[str, Any]) -> Dic
 async def get_agentos_status() -> Dict[str, Any]:
     """Get AgentOS integration status"""
     try:
-        integration = RealAgentOSIntegration()
+        integration = RealAgentOSIntegration("ws://4b262edbb4ce.ngrok-free.app/ws")
         return await integration.get_status()
     except Exception as e:
         logger.error(f"Failed to get AgentOS status: {e}")

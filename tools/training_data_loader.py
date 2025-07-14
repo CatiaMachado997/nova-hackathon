@@ -12,7 +12,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Agent types - only the 5-Agent Model
+# Agent types - only the 4-Agent Model
 AGENT_TYPES = ["utilitarian", "deontological", "cultural_context", "free_speech"]
 
 # Base prompts for each agent type

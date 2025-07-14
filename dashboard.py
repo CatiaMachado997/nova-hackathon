@@ -350,6 +350,34 @@ def submit_moderation_agentos():
         logger.error(f"AgentOS moderation error: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
+@app.route('/api/agents')
+def get_agents():
+    """Proxy API agents endpoint"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/agents", timeout=5)
+        return jsonify(response.json()), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"API connection error: {str(e)}"}), 503
+
+@app.route('/api/analytics/summary')
+def get_analytics_summary():
+    """Proxy API analytics endpoint"""
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/analytics/summary", timeout=5)
+        return jsonify(response.json()), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"API connection error: {str(e)}"}), 503
+
+@app.route('/api/moderate', methods=['POST'])
+def proxy_moderate():
+    """Proxy API moderation endpoint"""
+    try:
+        data = request.get_json()
+        response = requests.post(f"{API_BASE_URL}/api/moderate", json=data, timeout=30)
+        return jsonify(response.json()), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"API connection error: {str(e)}"}), 503
+
 # WebSocket event handlers
 @socketio.on('connect')
 def handle_connect():

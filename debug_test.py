@@ -37,9 +37,9 @@ async def test_deliberation():
         response = await commander.deliberate(content, context)
         
         print(f"✅ Deliberation completed!")
-        print(f"   Decision: {response.decision}")
-        print(f"   Confidence: {response.confidence}")
-        print(f"   Reasoning: {response.reasoning[:100]}...")
+        print(f"   Decision: {response['decision']}")
+        print(f"   Confidence: {response['confidence']}")
+        print(f"   Reasoning: {response['reasoning'][:100]}...")
         
         # Check deliberation history - removed since method doesn't exist
         print(f"   Response received successfully")

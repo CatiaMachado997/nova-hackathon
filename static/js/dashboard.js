@@ -211,13 +211,17 @@ async function testModeration() {
             },
             body: JSON.stringify({
                 content: testContent,
+                content_type: 'text', // allowed: text, video, image, audio, mixed
                 context: {},
                 user_id: 'test-user',
                 platform: 'dashboard',
                 audience_size: 1000,
                 vulnerable_audience: false,
-                educational_value: 0.5,
-                public_interest: 0.5
+                educational_value: false,
+                public_interest: false,
+                democratic_value: false,
+                target_cultures: ['global'],
+                audience_diversity: 'high' // allowed: low, medium, high
             })
         });
         
@@ -226,29 +230,59 @@ async function testModeration() {
         if (response.ok) {
             displayModerationResult(result);
         } else {
-            alert('Moderation failed: ' + result.detail);
+            let errorMessage = 'Moderation failed';
+            if (Array.isArray(result)) {
+                // If result is an array of error objects
+                errorMessage += ': ' + result.map(e => e.detail || e.error || JSON.stringify(e)).join(', ');
+            } else if (result && result.detail) {
+                errorMessage += ': ' + result.detail;
+            } else if (result && result.error) {
+                errorMessage += ': ' + result.error;
+            } else if (typeof result === 'string') {
+                errorMessage += ': ' + result;
+            } else if (result) {
+                errorMessage += ': ' + JSON.stringify(result);
+            }
+            alert(errorMessage);
         }
     } catch (error) {
         console.error('Error testing moderation:', error);
-        alert('Error testing moderation');
+        alert('Error testing moderation: ' + error.message);
     }
 }
 
 // Display moderation result
 function displayModerationResult(result) {
+    const modal = document.getElementById('moderation-result-modal');
     const resultElement = document.getElementById('moderation-result');
-    if (!resultElement) return;
-    
-    resultElement.innerHTML = `
-        <div class="alert alert-${getDecisionAlertClass(result.decision)}">
-            <h5>Decision: ${result.decision}</h5>
-            <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
-            <p><strong>Reasoning:</strong> ${result.reasoning}</p>
-            <p><strong>Task ID:</strong> ${result.task_id}</p>
-        </div>
-    `;
-    
-    resultElement.scrollIntoView({ behavior: 'smooth' });
+    if (modal && resultElement) {
+        resultElement.innerHTML = `
+            <button class="close-btn" onclick="closeModerationModal()" aria-label="Close">&times;</button>
+            <div class="alert alert-${getDecisionAlertClass(result.final_decision)}">
+                <h5>Decision: ${result.final_decision}</h5>
+                <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                <p><strong>Reasoning:</strong> ${result.reasoning}</p>
+                <p><strong>Task ID:</strong> ${result.task_id}</p>
+                <p><strong>Processing Time:</strong> ${result.processing_time.toFixed(2)}s</p>
+            </div>
+        `;
+        modal.classList.add('active');
+    } else {
+        // Fallback: show in legacy div
+        const legacy = document.getElementById('moderation-result-legacy');
+        if (legacy) {
+            legacy.innerHTML = `
+                <div class="alert alert-${getDecisionAlertClass(result.final_decision)}">
+                    <h5>Decision: ${result.final_decision}</h5>
+                    <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                    <p><strong>Reasoning:</strong> ${result.reasoning}</p>
+                    <p><strong>Task ID:</strong> ${result.task_id}</p>
+                    <p><strong>Processing Time:</strong> ${result.processing_time.toFixed(2)}s</p>
+                </div>
+            `;
+            legacy.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
 }
 
 // Refresh data

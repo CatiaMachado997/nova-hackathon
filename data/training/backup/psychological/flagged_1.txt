@@ -1,7 +1,0 @@
-Content: "Graphic video showing self-harm methods and encouraging others to follow. This content promotes dangerous behaviors that could trigger vulnerable individuals."
-
-Analysis: This content poses significant psychological risks including triggering self-harm ideation, normalizing dangerous behaviors, and potentially causing emotional distress to viewers.
-
-Decision: REMOVE
-Confidence: 0.95
-Reasoning: Content promotes self-harm and could trigger vulnerable individuals, causing severe psychological harm and potential real-world consequences. 

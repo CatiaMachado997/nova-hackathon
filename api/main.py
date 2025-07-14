@@ -118,7 +118,7 @@ async def moderate_content(request: ContentModerationRequest, background_tasks: 
         deliberation_result = await ethics_commander.deliberate(request.content, request.dict())
         
         deliberation_time = time.time() - start_time
-        logging.info(f"Deliberation completed in {deliberation_time:.2f}s. Decision: {deliberation_result.decision}")
+        logging.info(f"Deliberation completed in {deliberation_time:.2f}s. Decision: {deliberation_result['final_decision']}")
         
         # Create cross-examination result
         cross_examination = CrossExaminationResult(
@@ -128,56 +128,14 @@ async def moderate_content(request: ContentModerationRequest, background_tasks: 
             clarifications=[]
         )
         
-        # Convert specialist_opinions (list) to dict for individual_contributions
-        individual_contributions = {}
-        if hasattr(deliberation_result, 'supporting_evidence') and isinstance(deliberation_result.supporting_evidence, list):
-            for item in deliberation_result.supporting_evidence:
-                if isinstance(item, dict) and 'agent' in item:
-                    agent_name = str(item.get('agent', ''))
-                    if agent_name in ['utilitarian', 'deontological', 'cultural_context', 'free_speech']:
-                        individual_contributions[agent_name] = {
-                            'framework': str(item.get('framework', 'Unknown')),
-                            'decision': str(item.get('decision', 'UNKNOWN')),
-                            'confidence': float(item.get('confidence', 0.0)),
-                            'reasoning': str(item.get('reasoning', '')),
-                            'supporting_evidence': item.get('supporting_evidence', [])
-                        }
-        # Pass this dict to ConsensusResult
-        
-        # If no individual contributions found, create default ones
-        if not individual_contributions:
-            individual_contributions = {
-                "utilitarian": {
-                    'framework': 'Utilitarianism',
-                    'decision': deliberation_result.decision,
-                    'confidence': deliberation_result.confidence,
-                    'reasoning': deliberation_result.reasoning
-                },
-                "deontological": {
-                    'framework': 'Deontological Ethics',
-                    'decision': deliberation_result.decision,
-                    'confidence': deliberation_result.confidence,
-                    'reasoning': deliberation_result.reasoning
-                },
-                "cultural_context": {
-                    'framework': 'Cultural Context Ethics',
-                    'decision': deliberation_result.decision,
-                    'confidence': deliberation_result.confidence,
-                    'reasoning': deliberation_result.reasoning
-                },
-                "free_speech": {
-                    'framework': 'Free Speech Ethics',
-                    'decision': deliberation_result.decision,
-                    'confidence': deliberation_result.confidence,
-                    'reasoning': deliberation_result.reasoning
-                }
-            }
+        # Get individual contributions from deliberation result
+        individual_contributions = deliberation_result.get('individual_contributions', {})
         
         consensus = ConsensusResult(
-            decision=deliberation_result.decision,
-            confidence=deliberation_result.confidence,
-            reasoning=deliberation_result.reasoning,
-            evidence=deliberation_result.supporting_evidence,
+            decision=deliberation_result['final_decision'],
+            confidence=deliberation_result['confidence'],
+            reasoning=deliberation_result['reasoning'],
+            evidence=deliberation_result.get('evidence', []),
             individual_contributions=individual_contributions,
             cross_examination_results=cross_examination
         )
@@ -195,44 +153,44 @@ async def moderate_content(request: ContentModerationRequest, background_tasks: 
             "utilitarian": AgentResponse(
                 agent_name="UtilitarianAgent",
                 ethical_framework="Utilitarianism",
-                decision=deliberation_result.decision,
-                confidence=deliberation_result.confidence,
-                reasoning=deliberation_result.reasoning,
-                supporting_evidence=deliberation_result.supporting_evidence
+                decision=deliberation_result['final_decision'],
+                confidence=deliberation_result['confidence'],
+                reasoning=deliberation_result['reasoning'],
+                supporting_evidence=deliberation_result.get('evidence', [])
             ),
             "deontological": AgentResponse(
                 agent_name="DeontologicalAgent",
                 ethical_framework="Deontological Ethics",
-                decision=deliberation_result.decision,
-                confidence=deliberation_result.confidence,
-                reasoning=deliberation_result.reasoning,
-                supporting_evidence=deliberation_result.supporting_evidence
+                decision=deliberation_result['final_decision'],
+                confidence=deliberation_result['confidence'],
+                reasoning=deliberation_result['reasoning'],
+                supporting_evidence=deliberation_result.get('evidence', [])
             ),
             "cultural_context": AgentResponse(
                 agent_name="CulturalContextAgent",
                 ethical_framework="Cultural Context Ethics",
-                decision=deliberation_result.decision,
-                confidence=deliberation_result.confidence,
-                reasoning=deliberation_result.reasoning,
-                supporting_evidence=deliberation_result.supporting_evidence
+                decision=deliberation_result['final_decision'],
+                confidence=deliberation_result['confidence'],
+                reasoning=deliberation_result['reasoning'],
+                supporting_evidence=deliberation_result.get('evidence', [])
             ),
             "free_speech": AgentResponse(
                 agent_name="FreeSpeechAgent",
                 ethical_framework="Free Speech Ethics",
-                decision=deliberation_result.decision,
-                confidence=deliberation_result.confidence,
-                reasoning=deliberation_result.reasoning,
-                supporting_evidence=deliberation_result.supporting_evidence
+                decision=deliberation_result['final_decision'],
+                confidence=deliberation_result['confidence'],
+                reasoning=deliberation_result['reasoning'],
+                supporting_evidence=deliberation_result.get('evidence', [])
             )
         }
         
         # Create response
         response = ContentModerationResponse(
             task_id=str(uuid.uuid4()),
-            final_decision=deliberation_result.decision,
-            confidence=deliberation_result.confidence,
-            reasoning=deliberation_result.reasoning,
-            evidence=deliberation_result.supporting_evidence,
+            final_decision=deliberation_result['final_decision'],
+            confidence=deliberation_result['confidence'],
+            reasoning=deliberation_result['reasoning'],
+            evidence=deliberation_result.get('evidence', []),
             deliberation_summary=deliberation_summary,
             individual_responses=individual_responses,
             cross_examination=cross_examination,

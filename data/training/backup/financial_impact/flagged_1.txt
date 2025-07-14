@@ -1,7 +1,0 @@
-Content: "False information about a company's financial status that could manipulate stock prices. Content spreads misinformation that could cause financial losses to investors."
-
-Analysis: This content could cause significant financial harm at both platform level (legal liability, regulatory fines) and personal level (investor losses, market manipulation).
-
-Decision: REMOVE
-Confidence: 0.90
-Reasoning: Content spreads financial misinformation that could cause real financial harm to individuals and create legal/regulatory risks for the platform. 
