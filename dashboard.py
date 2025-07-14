@@ -437,6 +437,6 @@ if __name__ == '__main__':
     # Start the Flask-SocketIO server
     socketio.run(app, 
                 host='0.0.0.0', 
-                port=DASHBOARD_PORT, 
+                port=9001, 
                 debug=False,
                 allow_unsafe_werkzeug=True)
