@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 class RealAgentOSIntegration:
     """Real GenAI AgentOS Integration for EthIQ"""
-    
-    def __init__(self, agentos_url: str = "ws://4b262edbb4ce.ngrok-free.app/ws"):
-        self.agentos_url = agentos_url
+    def __init__(self):
+        import os
+        self.agentos_url = os.environ.get("AGENTOS_URL", "http://localhost:8001")
         self.jwt_token = None
         self.registered_agents = {}
         self.session = None
@@ -254,13 +254,12 @@ class RealAgentOSIntegration:
             logger.error(f"Failed to get AgentOS status: {e}")
             return {"status": "error", "error": str(e)}
 
-# Global instance
-agentos_integration = RealAgentOSIntegration("ws://4b262edbb4ce.ngrok-free.app/ws") 
+agentos_integration = RealAgentOSIntegration()
 
 async def initialize_agentos_protocol(agents: Dict[str, Any]) -> bool:
     """Initialize AgentOS Protocol integration"""
     try:
-        integration = RealAgentOSIntegration("ws://4b262edbb4ce.ngrok-free.app/ws")
+        integration = RealAgentOSIntegration()
         await integration.initialize()
         return True
     except Exception as e:
@@ -270,7 +269,7 @@ async def initialize_agentos_protocol(agents: Dict[str, Any]) -> bool:
 async def orchestrate_with_agentos(content: str, context: Dict[str, Any]) -> Dict[str, Any]:
     """Orchestrate content moderation with AgentOS"""
     try:
-        integration = RealAgentOSIntegration("ws://4b262edbb4ce.ngrok-free.app/ws")
+        integration = RealAgentOSIntegration()
         await integration.initialize()
         return await integration.orchestrate_moderation(content, context)
     except Exception as e:
@@ -280,7 +279,7 @@ async def orchestrate_with_agentos(content: str, context: Dict[str, Any]) -> Dic
 async def get_agentos_status() -> Dict[str, Any]:
     """Get AgentOS integration status"""
     try:
-        integration = RealAgentOSIntegration("ws://4b262edbb4ce.ngrok-free.app/ws")
+        integration = RealAgentOSIntegration()
         return await integration.get_status()
     except Exception as e:
         logger.error(f"Failed to get AgentOS status: {e}")

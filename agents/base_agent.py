@@ -60,7 +60,7 @@ class BaseAgent(ABC):
         self.response_history = []
         
         # AgentOS Integration
-        self.agentos_url = "http://localhost:8001"
+        self.agentos_url = os.environ.get("AGENTOS_URL", "http://localhost:8001")
         self.jwt_token = None
         self.agentos_session = None
         self.agent_id = f"{name.lower().replace('agent', '')}_agent"
