@@ -285,8 +285,8 @@ class LLMEthicsAgent(BaseAgent):
         super().__init__(name, description, ethical_framework)
         self.agent_type = agent_type
         self.llm_provider = os.getenv("LLM_PROVIDER", "mock").lower()
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        self.openai_api_key = os.getenv("OPENAI_API_KEY", "dummy_openai_api_key")
+        self.google_api_key = os.getenv("GOOGLE_API_KEY", "dummy_google_api_key")
         self.training_loader = TrainingDataLoader()
 
     def build_prompt(self, content: str) -> str:

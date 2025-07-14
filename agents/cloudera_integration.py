@@ -241,7 +241,7 @@ class ClouderaDashboard:
 # Global Cloudera integration instances
 cloudera_client = ClouderaStreamingClient(
     cluster_url=os.getenv("CLOUDERA_HOST", "https://cloudera-cluster.example.com"),
-    api_key=os.getenv("CLOUDERA_API_KEY", "your-cloudera-api-key"),
+    api_key=os.getenv("CLOUDERA_API_KEY", "dummy_cloudera_api_key"),
     ssh_key_path=os.getenv("CLOUDERA_SSH_KEY_PATH")
 )
 

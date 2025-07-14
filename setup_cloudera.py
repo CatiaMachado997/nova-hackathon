@@ -16,7 +16,7 @@ def create_env_file():
     # Get user input
     print("\nPlease provide your Cloudera AI Workbench details:")
     
-    api_key = input("Enter your Cloudera API Key: ").strip()
+    api_key = "dummy_cloudera_api_key"
     if not api_key:
         print("❌ API Key is required!")
         return False
@@ -42,7 +42,7 @@ def create_env_file():
     
     # Create .env content
     env_content = f"""# Cloudera AI Workbench Configuration
-CLOUDERA_API_KEY={api_key}
+CLOUDERA_API_KEY=dummy_cloudera_api_key
 CLOUDERA_SSH_KEY_PATH={ssh_key_path}
 CLOUDERA_HOST={host}
 CLOUDERA_PORT={port}
@@ -51,11 +51,11 @@ CLOUDERA_USERNAME={username}
 CLOUDERA_PASSWORD={password}
 
 # Notion Configuration (if you have it)
-NOTION_TOKEN=your_notion_token_here
-NOTION_DATABASE_ID=your_notion_database_id
+NOTION_TOKEN=dummy_notion_token
+NOTION_DATABASE_ID=dummy_notion_database_id
 
 # OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=dummy_openai_api_key
 """
     
     # Write to .env file

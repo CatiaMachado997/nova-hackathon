@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'ethiq-secret-key-2025'
+app.config['SECRET_KEY'] = 'dummy-dashboard-secret-key'
 
 # Initialize SocketIO with proper configuration
 socketio = SocketIO(app, 
